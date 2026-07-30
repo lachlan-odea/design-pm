@@ -184,6 +184,26 @@ export default function App() {
     }
   }, [sessionDesignerId]);
 
+  // Open a specific project from ?project=<id>. Used by the reviewer
+  // notification email link so the modal opens directly on the named
+  // project. Waits until workspace data is loaded so we can resolve the id
+  // and also flip to the project's team — otherwise the modal would be
+  // sitting over a confusingly different board.
+  useEffect(() => {
+    if (!sessionDesignerId || !workspace) return;
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get("project");
+    if (!id) return;
+    const project = workspace.projects.find((p) => p.id === id);
+    if (project) {
+      setCurrentWorkspaceId(project.workspaceId);
+      setOpenProjectId(id);
+    }
+    params.delete("project");
+    const url = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+    window.history.replaceState({}, "", url);
+  }, [sessionDesignerId, workspace]);
+
   const currentDesigner = useMemo(
     () =>
       workspace && sessionDesignerId
@@ -347,18 +367,19 @@ export default function App() {
     return workspace.designers.filter((d) => d.isReviewer);
   }, [workspace]);
 
-  // A project lands in your "For review" queue when your own UID is in its
-  // reviewerIds list. No separate role check needed — non-super-users never
-  // appear in any project's reviewerIds anyway.
-  const reviewProjects = useMemo(
-    () =>
-      sessionDesignerId
-        ? activeProjects
-            .filter((p) => p.reviewerIds?.includes(sessionDesignerId))
-            .sort(sortByPriorityThenDue)
-        : [],
-    [activeProjects, sessionDesignerId],
-  );
+  // "For review" is global — every active project that has the current
+  // user's UID in its reviewerIds list, regardless of which team it lives
+  // under. Each card in this section gets a team badge when it belongs to
+  // a different team than the one we're viewing, so the cross-team origin
+  // is visible without switching boards.
+  const reviewProjects = useMemo(() => {
+    if (!workspace || !sessionDesignerId) return [];
+    return workspace.projects
+      .filter((p) => p.reviewerIds?.includes(sessionDesignerId))
+      .filter((p) => (p.status ?? "active") === "active")
+      .filter((p) => !p.archived)
+      .sort(sortByPriorityThenDue);
+  }, [workspace, sessionDesignerId]);
 
   // Every mutator writes the target doc to Firestore and relies on the live
   // subscription to update `workspace` — the SDK's offline persistence makes
@@ -703,6 +724,13 @@ export default function App() {
                       project={p}
                       designers={workspace.designers}
                       onClick={() => setOpenProjectId(p.id)}
+                      teamBadge={
+                        p.workspaceId !== currentWorkspaceId
+                          ? availableWorkspaces.find(
+                              (w) => w.id === p.workspaceId,
+                            )?.name
+                          : undefined
+                      }
                     />
                   ))}
                 </div>
@@ -719,6 +747,7 @@ export default function App() {
                   const projects = activeProjects
                     .filter((p) => p.assigneeIds.includes(d.id))
                     .sort(sortByPriorityThenDue);
+                  const visibleProjects = projects.slice(0, 5);
                   return (
                     <div
                       key={d.id}
@@ -737,10 +766,10 @@ export default function App() {
                         </div>
                       </header>
                       <div className="team-col-cards">
-                        {projects.length === 0 && (
+                        {visibleProjects.length === 0 && (
                           <p className="muted small">No projects.</p>
                         )}
-                        {projects.map((p) => (
+                        {visibleProjects.map((p) => (
                           <ProjectCard
                             key={p.id}
                             project={p}
@@ -774,7 +803,7 @@ export default function App() {
                     {unassigned.length === 0 && (
                       <p className="muted small">Drop here to unassign.</p>
                     )}
-                    {unassigned.map((p) => (
+                    {unassigned.slice(0, 5).map((p) => (
                       <ProjectCard
                         key={p.id}
                         project={p}
@@ -798,7 +827,7 @@ export default function App() {
                     to resume
                   </span>
                 </div>
-                <div className="workspace-grid">
+                <div className="workspace-grid workspace-grid-scrollable">
                   {pausedProjects.map((p) => (
                     <ProjectCard
                       key={p.id}
@@ -820,7 +849,7 @@ export default function App() {
                     {completedProjects.length === 1 ? "" : "s"} done
                   </span>
                 </div>
-                <div className="workspace-grid">
+                <div className="workspace-grid workspace-grid-scrollable">
                   {completedProjects.map((p) => (
                     <ProjectCard
                       key={p.id}

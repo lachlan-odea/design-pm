@@ -489,6 +489,14 @@ textarea {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 12px;
 }
+.workspace-grid-scrollable {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  overflow-y: auto;
+  max-height: 600px;
+  padding-bottom: 8px;
+}
 
 /* Team columns */
 .team-section {
@@ -524,6 +532,8 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow-y: auto;
+  max-height: 500px;
 }
 
 /* Project card */
