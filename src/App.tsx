@@ -28,6 +28,7 @@ import { NotificationsPanel } from "./components/NotificationsPanel";
 import { CreateProjectModal } from "./components/CreateProjectModal";
 import { SettingsModal } from "./components/SettingsModal";
 import { Analytics } from "./components/Analytics";
+import { Dashboard } from "./components/Dashboard";
 import { Login } from "./components/Login";
 import { ProfileSetup } from "./components/ProfileSetup";
 import { Avatar } from "./components/Avatar";
@@ -61,7 +62,7 @@ export default function App() {
     string | null | undefined
   >(undefined);
   const [collapsed, setCollapsed] = useState(false);
-  const [view, setView] = useState<SidebarView>("workspace");
+  const [view, setView] = useState<SidebarView>("dashboard");
   const [openProjectId, setOpenProjectId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [createInitial, setCreateInitial] = useState<Partial<Project> | undefined>();
@@ -496,7 +497,7 @@ export default function App() {
     setOpenProjectId(null);
     setCreating(false);
     setSettingsOpen(false);
-    setView("workspace");
+    setView("dashboard");
     fbSignOut().catch(console.error);
   }
 
@@ -571,7 +572,7 @@ export default function App() {
         currentWorkspaceId={currentWorkspaceId}
         onSelectWorkspace={(id) => {
           setCurrentWorkspaceId(id);
-          setView("workspace");
+          setView("board");
         }}
         onDropProjectOnWorkspace={moveProjectToWorkspace}
         onToggleCollapsed={() => setCollapsed((c) => !c)}
@@ -593,6 +594,14 @@ export default function App() {
                 "Analytics"
               ) : view === "archived" ? (
                 "Archived projects"
+              ) : view === "dashboard" ? (
+                <>
+                  Dashboard
+                  <span className="topbar-sub">
+                    {" "}
+                    — {currentWorkspaceName}
+                  </span>
+                </>
               ) : (
                 <>
                   {currentDesigner.name}
@@ -608,12 +617,14 @@ export default function App() {
                 ? "Filter by team, date range, and export — see the filter row below"
                 : view === "archived"
                   ? `${archivedProjects.length} archived project${archivedProjects.length === 1 ? "" : "s"} in ${currentWorkspaceName}`
-                  : `${myProjects.length} project${myProjects.length === 1 ? "" : "s"} assigned · ${currentWorkspaceName}`}
+                  : view === "dashboard"
+                    ? "View your projects, deadlines, and recent activity"
+                    : `${myProjects.length} project${myProjects.length === 1 ? "" : "s"} assigned · ${currentWorkspaceName}`}
               {" · live"}
             </p>
           </div>
           <div className="topbar-actions">
-            {(view === "workspace" || view === "archived") && (
+            {(view === "board" || view === "archived") && (
               <input
                 className="search"
                 placeholder="Search projects…"
@@ -668,7 +679,7 @@ export default function App() {
               </div>
             )}
           </section>
-        ) : (
+        ) : view === "board" ? (
           <>
             <section
               className={`workspace-section drop-target ${
@@ -862,6 +873,12 @@ export default function App() {
               </section>
             )}
           </>
+        ) : (
+          <Dashboard
+            workspace={workspace}
+            currentDesignerId={sessionDesignerId}
+            onOpenProject={setOpenProjectId}
+          />
         )}
       </main>
 

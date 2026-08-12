@@ -3,7 +3,7 @@ import type { Designer, Workspace } from "../types";
 import { Avatar } from "./Avatar";
 import { readDraggedProjectId } from "../dnd";
 
-export type SidebarView = "workspace" | "analytics" | "archived";
+export type SidebarView = "dashboard" | "board" | "analytics" | "archived";
 
 type Props = {
   currentDesigner: Designer;
@@ -123,6 +123,27 @@ function AnalyticsGlyph() {
   );
 }
 
+function DashboardGlyph() {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+    </svg>
+  );
+}
+
 function ArchiveGlyph() {
   return (
     <svg
@@ -199,6 +220,22 @@ export function Sidebar({
           {collapsed ? "+" : "+ New project"}
         </button>
 
+        {!collapsed && <div className="nav-section">Navigation</div>}
+        <ul className="designer-list">
+          <li>
+            <button
+              className={`designer-btn ${view === "dashboard" ? "active" : ""}`}
+              onClick={() => onSelectView("dashboard")}
+              title="Dashboard"
+            >
+              <span className="dot-avatar" style={{ background: "#6366f1" }}>
+                <DashboardGlyph />
+              </span>
+              {!collapsed && <span className="designer-name">Dashboard</span>}
+            </button>
+          </li>
+        </ul>
+
         {!collapsed && <div className="nav-section">Teams</div>}
         <ul className="designer-list">
           {workspaces.map((w) => {
@@ -206,7 +243,7 @@ export function Sidebar({
               color: "#64748b",
               Glyph: WorkspaceGlyph,
             };
-            const active = view === "workspace" && currentWorkspaceId === w.id;
+            const active = view === "board" && currentWorkspaceId === w.id;
             const isDropTarget = dropOverWorkspaceId === w.id;
             // Dragging onto the workspace you're already viewing is a no-op,
             // so don't highlight or accept the drop there — keeps the gesture
@@ -218,7 +255,10 @@ export function Sidebar({
                   className={`designer-btn ${active ? "active" : ""} ${
                     isDropTarget && canDrop ? "drop-over" : ""
                   }`}
-                  onClick={() => onSelectWorkspace(w.id)}
+                  onClick={() => {
+                    onSelectWorkspace(w.id);
+                    onSelectView("board");
+                  }}
                   onDragOver={(e) => {
                     if (!canDrop) return;
                     e.preventDefault();
