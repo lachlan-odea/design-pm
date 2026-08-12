@@ -23,11 +23,6 @@ function sortByPriorityThenDue(a: Project, b: Project): number {
 }
 
 export function Dashboard({ workspace, currentDesignerId, onOpenProject }: DashboardProps) {
-  const currentDesigner = useMemo(
-    () => workspace.designers.find((d) => d.id === currentDesignerId),
-    [workspace.designers, currentDesignerId]
-  );
-
   const allActiveProjects = useMemo(
     () =>
       workspace.projects.filter(
