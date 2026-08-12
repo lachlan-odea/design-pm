@@ -71,6 +71,8 @@ export default function App() {
   const [filter, setFilter] = useState("");
   const [status, setStatus] = useState<string>("");
   const [dropOverColumn, setDropOverColumn] = useState<string | null>(null);
+  const [pausedExpanded, setPausedExpanded] = useState(true);
+  const [completedExpanded, setCompletedExpanded] = useState(true);
   // Transient banner shown after a project is moved between workspaces.
   // `undo` reverts the move and clears the toast.
   const [toast, setToast] = useState<{
@@ -831,45 +833,67 @@ export default function App() {
             {pausedProjects.length > 0 && (
               <section className="workspace-section paused-section">
                 <div className="section-head">
-                  <h2>Paused</h2>
+                  <div className="section-head-title">
+                    <button
+                      className="collapse-toggle"
+                      onClick={() => setPausedExpanded(!pausedExpanded)}
+                      title={pausedExpanded ? "Collapse" : "Expand"}
+                    >
+                      <span className={`collapse-icon ${pausedExpanded ? "expanded" : ""}`}>▶</span>
+                    </button>
+                    <h2>Paused</h2>
+                  </div>
                   <span className="muted small">
                     {pausedProjects.length} project
                     {pausedProjects.length === 1 ? "" : "s"} on hold · open one
                     to resume
                   </span>
                 </div>
-                <div className="workspace-grid workspace-grid-scrollable">
-                  {pausedProjects.map((p) => (
-                    <ProjectCard
-                      key={p.id}
-                      project={p}
-                      designers={workspace.designers}
-                      onClick={() => setOpenProjectId(p.id)}
-                    />
-                  ))}
-                </div>
+                {pausedExpanded && (
+                  <div className="workspace-grid workspace-grid-scrollable">
+                    {pausedProjects.map((p) => (
+                      <ProjectCard
+                        key={p.id}
+                        project={p}
+                        designers={workspace.designers}
+                        onClick={() => setOpenProjectId(p.id)}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
             )}
 
             {completedProjects.length > 0 && (
               <section className="workspace-section completed-section">
                 <div className="section-head">
-                  <h2>Completed</h2>
+                  <div className="section-head-title">
+                    <button
+                      className="collapse-toggle"
+                      onClick={() => setCompletedExpanded(!completedExpanded)}
+                      title={completedExpanded ? "Collapse" : "Expand"}
+                    >
+                      <span className={`collapse-icon ${completedExpanded ? "expanded" : ""}`}>▶</span>
+                    </button>
+                    <h2>Completed</h2>
+                  </div>
                   <span className="muted small">
                     {completedProjects.length} project
                     {completedProjects.length === 1 ? "" : "s"} done
                   </span>
                 </div>
-                <div className="workspace-grid workspace-grid-scrollable">
-                  {completedProjects.map((p) => (
-                    <ProjectCard
-                      key={p.id}
-                      project={p}
-                      designers={workspace.designers}
-                      onClick={() => setOpenProjectId(p.id)}
-                    />
-                  ))}
-                </div>
+                {completedExpanded && (
+                  <div className="workspace-grid workspace-grid-scrollable">
+                    {completedProjects.map((p) => (
+                      <ProjectCard
+                        key={p.id}
+                        project={p}
+                        designers={workspace.designers}
+                        onClick={() => setOpenProjectId(p.id)}
+                      />
+                    ))}
+                  </div>
+                )}
               </section>
             )}
           </>
