@@ -683,7 +683,7 @@ export function ProjectDetailModal({
                 </div>
               )}
             </Field>
-            <Field label="Brief">
+            <Field label="URL">
               <input
                 placeholder="https://…"
                 value={project.briefUrl}
@@ -691,7 +691,7 @@ export function ProjectDetailModal({
               />
               {project.briefUrl && (
                 <a className="brief-link" href={project.briefUrl} target="_blank" rel="noreferrer">
-                  Open brief ↗
+                  Open link ↗
                 </a>
               )}
             </Field>

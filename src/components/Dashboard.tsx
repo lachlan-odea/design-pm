@@ -93,17 +93,18 @@ export function Dashboard({ workspace, currentDesignerId, onOpenProject }: Dashb
       <div className="dashboard-grid">
         {/* Metrics Row */}
         <div className="dashboard-metrics">
+          {/* Same order as the Analytics status row. */}
           <div className="metric-card">
             <div className="metric-label">Planning</div>
             <div className="metric-value">{planningCount}</div>
           </div>
           <div className="metric-card">
-            <div className="metric-label">Active Projects</div>
-            <div className="metric-value">{activeCount}</div>
-          </div>
-          <div className="metric-card">
             <div className="metric-label">On hold</div>
             <div className="metric-value">{pausedCount}</div>
+          </div>
+          <div className="metric-card">
+            <div className="metric-label">Active Projects</div>
+            <div className="metric-value">{activeCount}</div>
           </div>
           <div className="metric-card">
             <div className="metric-label">Completed</div>
