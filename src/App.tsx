@@ -12,7 +12,11 @@ import {
   deleteProject as firestoreDeleteProject,
   createPlaceholderDesigner as firestoreCreatePlaceholderDesigner,
   deleteDesigner as firestoreDeleteDesigner,
+  seedHubsIfMissing,
   seedWorkspacesIfMissing,
+  setHub as firestoreSetHub,
+  deleteHub as firestoreDeleteHub,
+  setDesignerHub as firestoreSetDesignerHub,
   setDesignerPhotoUrl as firestoreSetDesignerPhotoUrl,
   setDesignerReviewer as firestoreSetDesignerReviewer,
   setDesignerSuperUser as firestoreSetDesignerSuperUser,
@@ -131,6 +135,11 @@ export default function App() {
     if (!sessionDesignerId) return;
     seedWorkspacesIfMissing().catch((err) => {
       console.warn("Couldn't seed workspaces", err);
+    });
+    // Creates Sydney + Chicago on a brand-new install only; never resurrects
+    // a location an admin has deleted.
+    seedHubsIfMissing().catch((err) => {
+      console.warn("Couldn't seed locations", err);
     });
   }, [sessionDesignerId]);
 
@@ -596,6 +605,7 @@ export default function App() {
         view={view}
         unreadNotifications={unreadNotifications}
         workspaces={availableWorkspaces}
+        hubs={workspace.hubs}
         currentWorkspaceId={currentWorkspaceId}
         onSelectWorkspace={(id) => {
           setCurrentWorkspaceId(id);
@@ -988,6 +998,7 @@ export default function App() {
           superUsers={superUsers}
           reviewers={reviewers}
           workspaces={availableWorkspaces}
+          hubs={workspace.hubs}
           darkMode={darkMode}
           onDarkModeChange={setDarkMode}
           textSize={textSize}
@@ -1002,6 +1013,9 @@ export default function App() {
             firestoreCreatePlaceholderDesigner(name, email).then(() => {})
           }
           onDeleteDesigner={firestoreDeleteDesigner}
+          onSaveHub={firestoreSetHub}
+          onDeleteHub={firestoreDeleteHub}
+          onUpdateDesignerHub={firestoreSetDesignerHub}
           onClose={() => setSettingsOpen(false)}
         />
       )}

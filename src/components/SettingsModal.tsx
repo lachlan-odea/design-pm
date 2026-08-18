@@ -1,7 +1,17 @@
-import { useEffect, useState } from "react";
-import type { Designer, Workspace } from "../types";
+import { useEffect, useMemo, useState } from "react";
+import type { Designer, Hub, Workspace } from "../types";
 import { changePassword } from "../firebase";
 import { Avatar } from "./Avatar";
+import {
+  DEFAULT_WORK_END_HOUR,
+  DEFAULT_WORK_START_HOUR,
+  hubClock,
+  isValidTimeZone,
+  isWithinWorkHours,
+  localTimeZone,
+  supportedTimeZones,
+  timeZoneOffsetLabel,
+} from "../timezones";
 
 type Props = {
   currentDesigner: Designer;
@@ -16,6 +26,9 @@ type Props = {
   // in the Reviewers section.
   reviewers: Designer[];
   workspaces: Workspace[];
+  // Configured office locations. Everyone reads them; only super users can
+  // change them.
+  hubs: Hub[];
   darkMode: boolean;
   onDarkModeChange: (enabled: boolean) => void;
   textSize: "small" | "default" | "large";
@@ -35,6 +48,9 @@ type Props = {
   ) => Promise<void>;
   onCreateDesigner: (name: string, email?: string) => Promise<void>;
   onDeleteDesigner: (designerId: string) => Promise<void>;
+  onSaveHub: (hub: Hub) => Promise<void>;
+  onDeleteHub: (hubId: string) => Promise<void>;
+  onUpdateDesignerHub: (designerId: string, hubId: string) => Promise<void>;
   onClose: () => void;
 };
 
@@ -61,6 +77,7 @@ export function SettingsModal({
   superUsers,
   reviewers,
   workspaces,
+  hubs,
   darkMode,
   onDarkModeChange,
   textSize,
@@ -71,6 +88,9 @@ export function SettingsModal({
   onUpdateDesignerReviewer,
   onCreateDesigner,
   onDeleteDesigner,
+  onSaveHub,
+  onDeleteHub,
+  onUpdateDesignerHub,
   onClose,
 }: Props) {
   const [currentPassword, setCurrentPassword] = useState("");
@@ -80,17 +100,20 @@ export function SettingsModal({
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [manageUsersOpen, setManageUsersOpen] = useState(false);
+  const [manageHubsOpen, setManageHubsOpen] = useState(false);
 
   useEffect(() => {
-    // Suspend the Settings Escape handler while the Manage users sub-modal
-    // is up — that modal owns Escape until it's closed.
-    if (manageUsersOpen) return;
+    // Suspend the Settings Escape handler while a sub-modal is up — that
+    // modal owns Escape until it's closed.
+    if (manageUsersOpen || manageHubsOpen) return;
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, manageUsersOpen]);
+  }, [onClose, manageUsersOpen, manageHubsOpen]);
+
+  const myHub = hubs.find((h) => h.id === currentDesigner.hubId);
 
   async function savePassword() {
     setError(null);
@@ -150,11 +173,46 @@ export function SettingsModal({
             </section>
           )}
 
+          {isSuperUser && (
+            <section className="modal-section">
+              <h3>Locations &amp; time zones</h3>
+              <p className="muted small">
+                Locations are shared — adding one puts a live clock in every
+                teammate's sidebar. Assign people to a location from Manage
+                users. Opens in a dedicated window.
+              </p>
+              {hubs.length > 0 && (
+                <div className="hub-summary">
+                  {hubs.map((h) => (
+                    <span key={h.id} className="hub-summary-item">
+                      <strong>{h.name}</strong> {hubClock(h)}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <div className="section-actions">
+                <button
+                  className="primary"
+                  onClick={() => setManageHubsOpen(true)}
+                >
+                  Manage locations →
+                </button>
+              </div>
+            </section>
+          )}
+
           <section className="modal-section">
             <h3>Account</h3>
             <p className="muted small">
               Signed in as <strong>{currentDesigner.name}</strong>
               {currentDesigner.email ? ` · ${currentDesigner.email}` : ""}
+            </p>
+            <p className="muted small">
+              {myHub
+                ? `Your location is ${myHub.name} (${myHub.timeZone}) — local time ${hubClock(myHub)}.`
+                : hubs.length > 0
+                  ? "You haven't been assigned a location yet, so teammates can't tell what time it is where you are. A super user can set one from Manage users."
+                  : "No locations have been set up yet."}
             </p>
           </section>
 
@@ -275,15 +333,378 @@ export function SettingsModal({
           superUsers={superUsers}
           reviewers={reviewers}
           workspaces={workspaces}
+          hubs={hubs}
           currentDesignerId={currentDesigner.id}
           onUpdateDesignerSuperUser={onUpdateDesignerSuperUser}
           onUpdateDesignerReviewer={onUpdateDesignerReviewer}
           onUpdateWorkspaceMembers={onUpdateWorkspaceMembers}
+          onUpdateDesignerHub={onUpdateDesignerHub}
           onCreateDesigner={onCreateDesigner}
           onDeleteDesigner={onDeleteDesigner}
           onClose={() => setManageUsersOpen(false)}
         />
       )}
+
+      {manageHubsOpen && (
+        <ManageHubsModal
+          hubs={hubs}
+          designers={designers}
+          onSaveHub={onSaveHub}
+          onDeleteHub={onDeleteHub}
+          onClose={() => setManageHubsOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+type HubRowProps = {
+  hub: Hub;
+  zones: string[];
+  assignedCount: number;
+  busy: boolean;
+  deleting: boolean;
+  onPatch: (patch: Partial<Hub>) => Promise<void> | void;
+  onDelete: () => void;
+};
+
+function clampHour(value: string): number {
+  return Math.min(23, Math.max(0, Number(value) || 0));
+}
+
+// One editable location. The free-text and numeric fields keep a local draft
+// and only write on blur or Enter — writing per keystroke would hammer a
+// collection every client subscribes to, and because the input's value comes
+// back from that live snapshot, the round-trip would fight the cursor
+// mid-word. The zone dropdown commits immediately: it's a single discrete
+// choice, so there's nothing to interrupt.
+function HubRow({
+  hub,
+  zones,
+  assignedCount,
+  busy,
+  deleting,
+  onPatch,
+  onDelete,
+}: HubRowProps) {
+  const [name, setName] = useState(hub.name);
+  const [start, setStart] = useState(
+    String(hub.workStartHour ?? DEFAULT_WORK_START_HOUR),
+  );
+  const [end, setEnd] = useState(
+    String(hub.workEndHour ?? DEFAULT_WORK_END_HOUR),
+  );
+
+  function commitName() {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setName(hub.name);
+      return;
+    }
+    if (trimmed !== hub.name) void onPatch({ name: trimmed });
+  }
+
+  function commitHours() {
+    const nextStart = clampHour(start);
+    const nextEnd = clampHour(end);
+    setStart(String(nextStart));
+    setEnd(String(nextEnd));
+    if (
+      nextStart !== (hub.workStartHour ?? DEFAULT_WORK_START_HOUR) ||
+      nextEnd !== (hub.workEndHour ?? DEFAULT_WORK_END_HOUR)
+    ) {
+      void onPatch({ workStartHour: nextStart, workEndHour: nextEnd });
+    }
+  }
+
+  // A zone saved from another browser may not be in this one's enumerated
+  // list; keep it selectable so editing anything else can't silently rewrite
+  // the zone to the first option.
+  const zoneOptions = zones.includes(hub.timeZone)
+    ? zones
+    : [hub.timeZone, ...zones];
+
+  return (
+    <div className="manage-hub-row">
+      <div className="manage-hub-main">
+        <input
+          className="manage-hub-name"
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onBlur={commitName}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") setName(hub.name);
+          }}
+          disabled={busy}
+          aria-label={`Name for ${hub.name}`}
+        />
+        <select
+          value={hub.timeZone}
+          onChange={(e) => void onPatch({ timeZone: e.target.value })}
+          disabled={busy}
+          aria-label={`Time zone for ${hub.name}`}
+        >
+          {zoneOptions.map((z) => (
+            <option key={z} value={z}>
+              {z} {timeZoneOffsetLabel(z)}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="manage-hub-hours">
+        <span className="manage-user-chip-label">Working</span>
+        <input
+          type="number"
+          min={0}
+          max={23}
+          value={start}
+          onChange={(e) => setStart(e.target.value)}
+          onBlur={commitHours}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          disabled={busy}
+          aria-label={`Work start hour for ${hub.name}`}
+        />
+        <span className="muted small">to</span>
+        <input
+          type="number"
+          min={0}
+          max={23}
+          value={end}
+          onChange={(e) => setEnd(e.target.value)}
+          onBlur={commitHours}
+          onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
+          disabled={busy}
+          aria-label={`Work end hour for ${hub.name}`}
+        />
+      </div>
+      <div className="manage-hub-now">
+        <span className={isWithinWorkHours(hub) ? "" : "manage-hub-offhours"}>
+          {hubClock(hub)}
+        </span>
+        <span className="muted small">
+          {assignedCount} {assignedCount === 1 ? "person" : "people"}
+        </span>
+      </div>
+      <button
+        type="button"
+        className="manage-user-delete"
+        onClick={onDelete}
+        disabled={deleting}
+        title={`Remove ${hub.name}`}
+      >
+        {deleting ? "Removing…" : "Remove"}
+      </button>
+    </div>
+  );
+}
+
+type ManageHubsModalProps = {
+  hubs: Hub[];
+  designers: Designer[];
+  onSaveHub: (hub: Hub) => Promise<void>;
+  onDeleteHub: (hubId: string) => Promise<void>;
+  onClose: () => void;
+};
+
+function slugifyHubId(name: string): string {
+  return (
+    name
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || `hub-${Date.now()}`
+  );
+}
+
+// Super-user CRUD over the shared location list. One row per location with
+// its name, IANA zone and working hours editable in place, plus an add form.
+function ManageHubsModal({
+  hubs,
+  designers,
+  onSaveHub,
+  onDeleteHub,
+  onClose,
+}: ManageHubsModalProps) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newZone, setNewZone] = useState(() => localTimeZone());
+
+  // Enumerated once — the IANA list runs to ~400 entries and never changes
+  // during a session.
+  const zones = useMemo(() => supportedTimeZones(), []);
+
+  async function run<T>(key: string, op: () => Promise<T>) {
+    setBusyKey(key);
+    setError(null);
+    try {
+      await op();
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusyKey(null);
+    }
+  }
+
+  function patchHub(hub: Hub, patch: Partial<Hub>) {
+    return run(`hub:${hub.id}`, () => onSaveHub({ ...hub, ...patch }));
+  }
+
+  async function submitNew() {
+    const name = newName.trim();
+    if (!name) return;
+    if (!isValidTimeZone(newZone)) {
+      setError(`"${newZone}" isn't a time zone this browser recognises.`);
+      return;
+    }
+    const id = slugifyHubId(name);
+    if (hubs.some((h) => h.id === id)) {
+      setError(`A location called "${name}" already exists.`);
+      return;
+    }
+    await run("create", () =>
+      onSaveHub({
+        id,
+        name,
+        timeZone: newZone,
+        workStartHour: DEFAULT_WORK_START_HOUR,
+        workEndHour: DEFAULT_WORK_END_HOUR,
+      }),
+    );
+    setNewName("");
+    setAdding(false);
+  }
+
+  function confirmDelete(hub: Hub) {
+    const assigned = designers.filter((d) => d.hubId === hub.id);
+    const warning = assigned.length
+      ? `\n\n${assigned.length} ${assigned.length === 1 ? "person is" : "people are"} assigned to it (${assigned
+          .map((d) => d.name)
+          .join(", ")}). They'll become unassigned.`
+      : "";
+    const ok = window.confirm(
+      `Remove ${hub.name}? Its clock disappears from everyone's sidebar.${warning}`,
+    );
+    if (!ok) return;
+    void run(`delete:${hub.id}`, () => onDeleteHub(hub.id));
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <header className="modal-head">
+          <h2 className="modal-title-static">Locations &amp; time zones</h2>
+          <button className="icon-btn" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        </header>
+        <div className="modal-body">
+          <p className="muted small" style={{ marginTop: 0 }}>
+            Each location stores an IANA time zone, so daylight saving is
+            handled for you — Sydney and Chicago sit 15 to 17 hours apart
+            depending on the month. Working hours only decide when a clock is
+            greyed out as “outside working hours”; nothing is ever blocked.
+          </p>
+          <p className="muted small">
+            Due dates stay plain calendar dates. The 20th is the 20th in every
+            location — what differs is when the day starts, which is why a
+            countdown can honestly disagree by one between offices.
+          </p>
+
+          <div className="manage-users-toolbar">
+            {!adding ? (
+              <button
+                className="primary"
+                onClick={() => setAdding(true)}
+                disabled={busyKey === "create"}
+              >
+                + Add location
+              </button>
+            ) : (
+              <div className="manage-users-add">
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Location name, e.g. London"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && newName.trim()) void submitNew();
+                    if (e.key === "Escape") setAdding(false);
+                  }}
+                  disabled={busyKey === "create"}
+                />
+                <select
+                  value={newZone}
+                  onChange={(e) => setNewZone(e.target.value)}
+                  disabled={busyKey === "create"}
+                >
+                  {zones.map((z) => (
+                    <option key={z} value={z}>
+                      {z} {timeZoneOffsetLabel(z)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => {
+                    setAdding(false);
+                    setNewName("");
+                  }}
+                  disabled={busyKey === "create"}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="primary"
+                  onClick={submitNew}
+                  disabled={!newName.trim() || busyKey === "create"}
+                >
+                  {busyKey === "create" ? "Adding…" : "Add"}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {hubs.length === 0 ? (
+            <p className="muted small">
+              No locations yet. Add one to put a clock in everyone's sidebar.
+            </p>
+          ) : (
+            <div className="manage-hubs">
+              {hubs.map((hub) => (
+                <HubRow
+                  key={hub.id}
+                  hub={hub}
+                  zones={zones}
+                  assignedCount={
+                    designers.filter((d) => d.hubId === hub.id).length
+                  }
+                  busy={busyKey === `hub:${hub.id}`}
+                  deleting={busyKey === `delete:${hub.id}`}
+                  onPatch={(patch) => patchHub(hub, patch)}
+                  onDelete={() => confirmDelete(hub)}
+                />
+              ))}
+            </div>
+          )}
+          {error && <p className="login-error">{error}</p>}
+        </div>
+        <footer className="modal-foot">
+          <button onClick={onClose}>Done</button>
+        </footer>
+      </div>
     </div>
   );
 }
@@ -381,7 +802,9 @@ type ManageUsersModalProps = {
   superUsers: Designer[];
   reviewers: Designer[];
   workspaces: Workspace[];
+  hubs: Hub[];
   currentDesignerId: string;
+  onUpdateDesignerHub: (designerId: string, hubId: string) => Promise<void>;
   onUpdateDesignerSuperUser: (
     designerId: string,
     isSuperUser: boolean,
@@ -408,7 +831,9 @@ function ManageUsersModal({
   superUsers,
   reviewers,
   workspaces,
+  hubs,
   currentDesignerId,
+  onUpdateDesignerHub,
   onUpdateDesignerSuperUser,
   onUpdateDesignerReviewer,
   onUpdateWorkspaceMembers,
@@ -611,6 +1036,49 @@ function ManageUsersModal({
                     Reviewer
                   </button>
                 </div>
+                {hubs.length > 0 && (
+                  <div className="manage-user-chip-group">
+                    <span className="manage-user-chip-label">Location</span>
+                    {hubs.map((h) => {
+                      const active = d.hubId === h.id;
+                      const key = `hub:${h.id}:${d.id}`;
+                      return (
+                        <button
+                          type="button"
+                          key={h.id}
+                          className={`assignee-chip ${active ? "active" : ""}`}
+                          // Clicking the active location clears it, so
+                          // "no location" stays reachable without a
+                          // separate control.
+                          onClick={() =>
+                            run(key, () =>
+                              onUpdateDesignerHub(d.id, active ? "" : h.id),
+                            )
+                          }
+                          disabled={busyKey === key}
+                          title={
+                            active
+                              ? `Clear ${d.name}'s location`
+                              : `Put ${d.name} in ${h.name} (${h.timeZone})`
+                          }
+                        >
+                          {h.name}
+                        </button>
+                      );
+                    })}
+                    {d.hubId && (
+                      <span className="muted small manage-user-localtime">
+                        {(() => {
+                          const hub = hubs.find((h) => h.id === d.hubId);
+                          if (!hub) return "";
+                          return `${hubClock(hub)}${
+                            isWithinWorkHours(hub) ? "" : " · outside hours"
+                          }`;
+                        })()}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="manage-user-chip-group">
                   <span className="manage-user-chip-label">Teams</span>
                   {workspaces.map((w) => {

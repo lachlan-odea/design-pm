@@ -32,6 +32,29 @@ export const SEED_WORKSPACES = [
 
 export const DEFAULT_WORKSPACE_ID = SEED_WORKSPACES[0].id;
 
+// The two offices we start with. Written into /hubs on first load the same
+// way SEED_WORKSPACES is, then managed from Settings → Locations & time
+// zones — super users can add, rename, retime or remove any of them, and the
+// change lands in everyone's sidebar. This list only supplies the initial
+// pair, so editing a seeded hub in the UI sticks; it won't be reset on the
+// next boot.
+export const SEED_HUBS = [
+  {
+    id: "sydney",
+    name: "Sydney",
+    timeZone: "Australia/Sydney",
+    workStartHour: 8,
+    workEndHour: 18,
+  },
+  {
+    id: "chicago",
+    name: "Chicago",
+    timeZone: "America/Chicago",
+    workStartHour: 8,
+    workEndHour: 18,
+  },
+] as const;
+
 export const CONTENT_TYPES = [
   "Web",
   "Landing page",

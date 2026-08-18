@@ -20,6 +20,12 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow read, write: if request.auth != null;
     }
+    // Office locations / time zones. Shared config every signed-in user
+    // reads; writes are gated to super users by the Settings UI, the same
+    // trust model as the isSuperUser flag on a designer doc.
+    match /hubs/{hubId} {
+      allow read, write: if request.auth != null;
+    }
     // My Desk checklist items are private to one person, so unlike the
     // collections above these are locked to their owner rather than to any
     // signed-in user. Reads are constrained by the ownerId == uid filter the

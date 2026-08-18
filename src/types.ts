@@ -2,12 +2,36 @@ export type Priority = "Urgent" | "High" | "Normal" | "Low";
 
 export type ProjectStatus = "active" | "completed" | "paused";
 
+// An office location and the time zone it keeps. Managed by super users in
+// Settings → Locations & time zones, and shared by everyone: adding one puts
+// a clock in every teammate's sidebar.
+//
+// Deliberately stores an IANA zone id ("Australia/Sydney") rather than a UTC
+// offset, so daylight saving is the browser's problem rather than ours —
+// Sydney and Chicago are between 15 and 17 hours apart depending on the month.
+export type Hub = {
+  id: string;
+  // Display name, e.g. "Sydney". Free text — it doesn't have to match the
+  // city in the zone id.
+  name: string;
+  // IANA time zone identifier, e.g. "Australia/Sydney".
+  timeZone: string;
+  // Local hours between which people here are considered contactable. Used
+  // only to grey out a clock, never to block anything. A range that wraps
+  // past midnight (22 → 6) is valid.
+  workStartHour: number;
+  workEndHour: number;
+};
+
 export type Designer = {
   id: string;
   name: string;
   initials: string;
   color: string;
   email?: string;
+  // Which Hub this person sits in. Missing means unassigned — they simply
+  // don't get a "you" marker on any clock.
+  hubId?: string;
   // User-supplied headshot URL pasted from Settings. Empty / missing falls
   // back to the initials chip.
   photoUrl?: string;
@@ -129,4 +153,5 @@ export type WorkspaceData = {
   workspaces: Workspace[];
   projects: Project[];
   notifications: Notification[];
+  hubs: Hub[];
 };

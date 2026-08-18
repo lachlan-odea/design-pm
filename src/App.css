@@ -33,6 +33,10 @@ body,
   color: var(--text);
 }
 
+:root {
+  color-scheme: light;
+}
+
 /* Dark mode */
 :root.dark-mode {
   --bg: #0f172a;
@@ -42,6 +46,20 @@ body,
   --border-strong: #64748b;
   --text: #f1f5f9;
   --muted: #94a3b8;
+  /* The single most important line for dark mode: the parts of a form
+     control the browser paints itself — a <select>'s drop-down list, the
+     number spinner arrows, the calendar and clock pickers on date/time
+     inputs, scrollbars — ignore our background/color rules entirely and
+     follow color-scheme. Without this they render light-on-light and the
+     time zone picker and hour fields are unreadable. */
+  color-scheme: dark;
+}
+
+/* Belt and braces for the drop-down list itself: some Windows/Linux builds
+   still paint <option> from the page rather than the platform theme. */
+:root.dark-mode option {
+  background: var(--surface);
+  color: var(--text);
 }
 
 :root.dark-mode .flag-indicator {
@@ -2388,6 +2406,223 @@ textarea {
 
 .mydesk .deadline-item .priority-badge {
   align-self: center;
+}
+
+/* ── Locations & time zones ───────────────────────────────────────── */
+
+/* Live clock strip under the sidebar user.
+   One row per location rather than side-by-side columns: the rail is only
+   232px wide, so equal-width columns forced the (non-shrinkable) time text
+   to overflow its box as soon as a third location was added. A vertical list
+   truncates the name instead, which degrades gracefully to any number. */
+.hub-clocks {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px 12px;
+  /* A long list scrolls rather than pushing the nav off-screen. */
+  max-height: 32vh;
+  overflow-y: auto;
+}
+
+.hub-clock {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.hub-clock.me {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+/* Greyed rather than hidden — you still want to know what time it is there,
+   you just shouldn't expect an answer. */
+.hub-clock.off-hours {
+  opacity: 0.62;
+}
+
+/* The flexible half: this is what gives way when space runs short. */
+.hub-clock-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hub-clock-meta {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.hub-clock-time {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hub-clock.off-hours .hub-clock-time {
+  color: var(--muted);
+}
+
+.hub-clock-gap {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+/* Collapsed rail: 64px total, so only your own time fits. */
+.hub-clocks.collapsed {
+  padding: 0 8px 12px;
+  align-items: center;
+  max-height: none;
+  overflow: visible;
+}
+
+.hub-clocks.collapsed .hub-clock {
+  padding: 5px 6px;
+  justify-content: center;
+}
+
+.hub-clocks.collapsed .hub-clock-time {
+  font-size: 11px;
+}
+
+/* The location chip under the signed-in user's name in the sidebar. */
+.hub-tag {
+  align-self: flex-start;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.1);
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+/* Read-only preview of the configured locations in Settings. */
+.hub-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 0;
+}
+
+.hub-summary-item {
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hub-summary-item strong {
+  color: var(--text);
+  margin-right: 6px;
+}
+
+/* Admin rows in the Locations & time zones sub-modal. */
+.manage-hubs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.manage-hub-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  flex-wrap: wrap;
+}
+
+.manage-hub-main {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.manage-hub-main input,
+.manage-hub-main select {
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.manage-hub-name {
+  flex: 0 0 130px;
+  font-weight: 600;
+}
+
+.manage-hub-main select {
+  flex: 1 1 auto;
+}
+
+.manage-hub-hours {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.manage-hub-hours input {
+  width: 56px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.manage-hub-now {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 0 0 auto;
+  min-width: 110px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.manage-hub-offhours {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.manage-user-localtime {
+  margin-left: 6px;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ── My Desk checklist (Today / Upcoming / Completed) ─────────────── */

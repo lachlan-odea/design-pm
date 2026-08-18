@@ -1,6 +1,7 @@
 import { useState } from "react";
-import type { Designer, Workspace } from "../types";
+import type { Designer, Hub, Workspace } from "../types";
 import { Avatar } from "./Avatar";
+import { HubClocks } from "./HubClocks";
 import { readDraggedProjectId } from "../dnd";
 
 export type SidebarView = "myDesk" | "executiveDashboard" | "board" | "analytics" | "archived";
@@ -11,6 +12,8 @@ type Props = {
   view: SidebarView;
   unreadNotifications: number;
   workspaces: Workspace[];
+  // Configured office locations, rendered as a live clock strip.
+  hubs: Hub[];
   currentWorkspaceId: string;
   onSelectWorkspace: (id: string) => void;
   // Fired when a project card is dropped on a workspace nav item. Receives
@@ -180,6 +183,7 @@ export function Sidebar({
   view,
   unreadNotifications,
   workspaces,
+  hubs,
   currentWorkspaceId,
   onSelectWorkspace,
   onDropProjectOnWorkspace,
@@ -196,6 +200,7 @@ export function Sidebar({
   const [dropOverWorkspaceId, setDropOverWorkspaceId] = useState<string | null>(
     null,
   );
+  const myHub = hubs.find((h) => h.id === currentDesigner.hubId);
   return (
     <aside className={`sidebar ${collapsed ? "collapsed" : ""}`}>
       <div className="sidebar-head">
@@ -210,10 +215,22 @@ export function Sidebar({
         {!collapsed && (
           <div className="sidebar-user-info">
             <div className="sidebar-user-name">{currentDesigner.name}</div>
-            <div className="muted small">Signed in</div>
+            {myHub ? (
+              <div className="hub-tag" title={myHub.timeZone}>
+                {myHub.name}
+              </div>
+            ) : (
+              <div className="muted small">Signed in</div>
+            )}
           </div>
         )}
       </div>
+
+      <HubClocks
+        hubs={hubs}
+        myHubId={currentDesigner.hubId}
+        collapsed={collapsed}
+      />
 
       <nav className="sidebar-nav">
         <button className="nav-primary" onClick={onNewProject} title="New project">

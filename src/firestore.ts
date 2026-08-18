@@ -11,10 +11,11 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { DEFAULT_WORKSPACE_ID, SEED_WORKSPACES } from "./constants";
+import { DEFAULT_WORKSPACE_ID, SEED_HUBS, SEED_WORKSPACES } from "./constants";
 import type {
   DeskItem,
   Designer,
+  Hub,
   Notification,
   Project,
   Workspace,
@@ -26,6 +27,7 @@ const workspacesCol = () => collection(db, "workspaces");
 const projectsCol = () => collection(db, "projects");
 const notificationsCol = () => collection(db, "notifications");
 const deskItemsCol = () => collection(db, "deskItems");
+const hubsCol = () => collection(db, "hubs");
 
 // Backfill missing workspaceId on legacy docs that predate the multi-
 // workspace feature. They all belonged to the original Design workspace.
@@ -44,20 +46,23 @@ export function subscribeWorkspace(
   let workspaces: Workspace[] = [];
   let projects: Project[] = [];
   let notifications: Notification[] = [];
+  let hubs: Hub[] = [];
   let designersReady = false;
   let workspacesReady = false;
   let projectsReady = false;
   let notificationsReady = false;
+  let hubsReady = false;
 
   function emit() {
     if (
       !designersReady ||
       !workspacesReady ||
       !projectsReady ||
-      !notificationsReady
+      !notificationsReady ||
+      !hubsReady
     )
       return;
-    onChange({ designers, workspaces, projects, notifications });
+    onChange({ designers, workspaces, projects, notifications, hubs });
   }
 
   const unsubDesigners = onSnapshot(
@@ -106,11 +111,26 @@ export function subscribeWorkspace(
     onError,
   );
 
+  const unsubHubs = onSnapshot(
+    hubsCol(),
+    (snap) => {
+      hubs = snap.docs
+        .map((d) => d.data() as Hub)
+        // Alphabetical so the sidebar clock strip has a stable order no
+        // matter what order the docs come back in.
+        .sort((a, b) => a.name.localeCompare(b.name));
+      hubsReady = true;
+      emit();
+    },
+    onError,
+  );
+
   return () => {
     unsubDesigners();
     unsubWorkspaces();
     unsubProjects();
     unsubNotifications();
+    unsubHubs();
   };
 }
 
@@ -389,6 +409,51 @@ export async function applyDeskItemChanges(
   const batch = writeBatch(db);
   updated.forEach((item) => batch.set(doc(deskItemsCol(), item.id), item));
   removedIds.forEach((id) => batch.delete(doc(deskItemsCol(), id)));
+  await batch.commit();
+}
+
+// ── Locations & time zones ─────────────────────────────────────────────
+// Shared config, not per-user: a hub added here shows up in everybody's
+// sidebar. Writes are gated to super users at the UI layer, same trust model
+// as setDesignerSuperUser.
+
+export async function setHub(hub: Hub): Promise<void> {
+  await setDoc(doc(hubsCol(), hub.id), hub);
+}
+
+// Removing a hub leaves `hubId` dangling on any designer who was in it. They
+// render as unassigned, which is the same state as never having been given
+// one, so there's nothing to repair — but clear the references anyway so the
+// team list doesn't quietly disagree with the location list.
+export async function deleteHub(hubId: string): Promise<void> {
+  const designersSnap = await getDocs(designersCol());
+  const affected = designersSnap.docs.filter(
+    (d) => (d.data() as Designer).hubId === hubId,
+  );
+  const batch = writeBatch(db);
+  batch.delete(doc(hubsCol(), hubId));
+  affected.forEach((d) => batch.update(d.ref, { hubId: "" }));
+  await batch.commit();
+}
+
+// Assign a designer to a hub. Pass an empty string to unassign.
+export async function setDesignerHub(
+  designerId: string,
+  hubId: string,
+): Promise<void> {
+  await setDoc(doc(designersCol(), designerId), { hubId }, { merge: true });
+}
+
+// Same idempotent-seed pattern as seedWorkspacesIfMissing: creates Sydney and
+// Chicago on first boot and never touches them again, so an admin's later
+// edits (or deletions) stick.
+export async function seedHubsIfMissing(): Promise<void> {
+  const existing = await getDocs(hubsCol());
+  // Only seed a genuinely empty collection. Checking for individual missing
+  // ids would resurrect a hub an admin deliberately deleted.
+  if (!existing.empty) return;
+  const batch = writeBatch(db);
+  SEED_HUBS.forEach((h) => batch.set(doc(hubsCol(), h.id), { ...h }));
   await batch.commit();
 }
 
