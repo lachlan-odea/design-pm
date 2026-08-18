@@ -3,7 +3,7 @@ import type { Designer, Workspace } from "../types";
 import { Avatar } from "./Avatar";
 import { readDraggedProjectId } from "../dnd";
 
-export type SidebarView = "dashboard" | "board" | "analytics" | "archived";
+export type SidebarView = "myDesk" | "executiveSummary" | "board" | "analytics" | "archived";
 
 type Props = {
   currentDesigner: Designer;
@@ -224,14 +224,14 @@ export function Sidebar({
         <ul className="designer-list">
           <li>
             <button
-              className={`designer-btn ${view === "dashboard" ? "active" : ""}`}
-              onClick={() => onSelectView("dashboard")}
-              title="Dashboard"
+              className={`designer-btn ${view === "myDesk" ? "active" : ""}`}
+              onClick={() => onSelectView("myDesk")}
+              title="My Desk"
             >
               <span className="dot-avatar" style={{ background: "#6366f1" }}>
                 <DashboardGlyph />
               </span>
-              {!collapsed && <span className="designer-name">Dashboard</span>}
+              {!collapsed && <span className="designer-name">My Desk</span>}
             </button>
           </li>
         </ul>
@@ -289,6 +289,18 @@ export function Sidebar({
 
         {!collapsed && <div className="nav-section">View</div>}
         <ul className="designer-list">
+          <li>
+            <button
+              className={`designer-btn ${view === "executiveSummary" ? "active" : ""}`}
+              onClick={() => onSelectView("executiveSummary")}
+              title="Executive Summary"
+            >
+              <span className="dot-avatar" style={{ background: "#8b5cf6" }}>
+                <DashboardGlyph />
+              </span>
+              {!collapsed && <span className="designer-name">Executive Summary</span>}
+            </button>
+          </li>
           <li>
             <button
               className={`designer-btn ${view === "analytics" ? "active" : ""}`}

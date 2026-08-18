@@ -80,6 +80,152 @@ body,
   background: #0f2818;
 }
 
+:root.dark-mode .dashboard-section.dashboard-overdue {
+  border-color: #7f1d1d;
+  background: #2f0e0e;
+}
+
+:root.dark-mode .dashboard-task-item {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .dashboard-task-item:hover {
+  background: var(--surface);
+  border-color: var(--primary);
+}
+
+:root.dark-mode .dashboard-deadline-item {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .dashboard-deadline-item:hover {
+  background: var(--surface);
+  border-color: var(--primary);
+}
+
+:root.dark-mode .deadline-date {
+  background: var(--primary);
+  color: white;
+}
+
+:root.dark-mode .notification-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+:root.dark-mode .notification-card.overdue {
+  border-left-color: #dc2626;
+  background: rgba(220, 38, 38, 0.1);
+}
+
+:root.dark-mode .notification-card.due-soon {
+  border-left-color: #ea580c;
+  background: rgba(234, 88, 12, 0.1);
+}
+
+:root.dark-mode .notification-card.high-priority {
+  border-left-color: #dc2626;
+}
+
+:root.dark-mode .notification-item {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+:root.dark-mode .notification-item:hover {
+  background: var(--primary);
+  color: white;
+}
+
+:root.dark-mode .notification-meta {
+  color: var(--muted);
+}
+
+:root.dark-mode .notification-item:hover .notification-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+:root.dark-mode .project-item {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .project-item:hover {
+  background: var(--surface);
+  border-color: var(--primary);
+}
+
+:root.dark-mode .deadline-item {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .deadline-item:hover {
+  background: var(--surface);
+  border-color: var(--primary);
+}
+
+:root.dark-mode .mydesk-section {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+:root.dark-mode .recharts-default-tooltip {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+}
+
+:root.dark-mode .recharts-legend-wrapper {
+  color: var(--text) !important;
+}
+
+:root.dark-mode .recharts-legend-item-text {
+  color: var(--text) !important;
+}
+
+:root.dark-mode .recharts-surface {
+  background: transparent !important;
+}
+
+:root.dark-mode .recharts-text {
+  fill: var(--text) !important;
+}
+
+:root.dark-mode .recharts-axis-label {
+  fill: var(--text) !important;
+}
+
+:root.dark-mode .recharts-cartesian-axis-tick-value {
+  fill: var(--muted) !important;
+}
+
+:root.dark-mode .archived-section {
+  border-color: var(--border);
+  background: transparent;
+}
+
+:root.dark-mode .archived-section .workspace-grid {
+  background: transparent;
+}
+
+:root.dark-mode .project-card {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .archived-section .project-card {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
 :root.dark-mode .project-card {
   background: var(--surface);
   border-color: var(--border);
@@ -1945,6 +2091,297 @@ textarea {
   background: var(--surface);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* My Desk Styles */
+.mydesk {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.mydesk-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.mydesk-greeting h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.mydesk-greeting p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.mydesk-notifications {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.notification-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.notification-card.high-priority {
+  border-left: 4px solid #ef4444;
+}
+
+.notification-card.overdue {
+  border-left: 4px solid #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.notification-card.due-soon {
+  border-left: 4px solid #f97316;
+  background: rgba(249, 115, 22, 0.05);
+}
+
+.notification-card.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.notification-card h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notification-item {
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.notification-item:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.notification-item:hover .notification-meta {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.notification-title {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.notification-meta {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  transition: color 0.2s;
+}
+
+.mydesk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.mydesk-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.mydesk-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mydesk-section h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.badge {
+  display: inline-block;
+  background: var(--primary);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 12px;
+  min-width: 24px;
+  text-align: center;
+}
+
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-item {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.project-item:hover {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.project-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.project-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.3;
+}
+
+.priority-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.project-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.project-client {
+  color: var(--muted);
+}
+
+.project-due {
+  font-weight: 600;
+  color: #3b82f6;
+}
+
+.project-due.overdue {
+  color: #ef4444;
+}
+
+.deadline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.deadline-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.deadline-item:hover {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.deadline-date {
+  flex-shrink: 0;
+  width: 54px;
+  text-align: center;
+  padding: 6px;
+  background: var(--primary);
+  color: white;
+  border-radius: 6px;
+}
+
+.deadline-day {
+  font-weight: 700;
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.deadline-month {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.deadline-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.deadline-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.deadline-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.priority-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 54px;
+  height: 54px;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  font-size: 11px;
 }
 
 /* Drag and drop */
