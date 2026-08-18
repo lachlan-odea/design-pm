@@ -73,6 +73,13 @@ export default function App() {
   const [dropOverColumn, setDropOverColumn] = useState<string | null>(null);
   const [pausedExpanded, setPausedExpanded] = useState(true);
   const [completedExpanded, setCompletedExpanded] = useState(true);
+  const [darkMode, setDarkMode] = useState(() =>
+    localStorage.getItem("waypoint.darkMode") === "true"
+  );
+  const [textSize, setTextSize] = useState<"small" | "default" | "large">(() => {
+    const saved = localStorage.getItem("waypoint.textSize");
+    return (saved as "small" | "default" | "large") || "default";
+  });
   // Transient banner shown after a project is moved between workspaces.
   // `undo` reverts the move and clears the toast.
   const [toast, setToast] = useState<{
@@ -88,6 +95,23 @@ export default function App() {
     setCurrentWorkspaceIdState(id);
     localStorage.setItem("waypoint.workspaceId", id);
   }
+
+  // Persist dark mode preference
+  useEffect(() => {
+    localStorage.setItem("waypoint.darkMode", String(darkMode));
+    if (darkMode) {
+      document.documentElement.classList.add("dark-mode");
+    } else {
+      document.documentElement.classList.remove("dark-mode");
+    }
+  }, [darkMode]);
+
+  // Persist text size preference
+  useEffect(() => {
+    localStorage.setItem("waypoint.textSize", textSize);
+    const scale = textSize === "small" ? 0.9 : textSize === "large" ? 1.1 : 1;
+    document.documentElement.style.zoom = String(scale);
+  }, [textSize]);
 
   // Watch Firebase auth state. Sets the session designer id to the user's
   // UID (which is also their Designer doc id) when signed in, or null when
@@ -953,6 +977,10 @@ export default function App() {
           superUsers={superUsers}
           reviewers={reviewers}
           workspaces={availableWorkspaces}
+          darkMode={darkMode}
+          onDarkModeChange={setDarkMode}
+          textSize={textSize}
+          onTextSizeChange={setTextSize}
           onUpdateWorkspaceMembers={firestoreSetWorkspaceMembers}
           onUpdatePhotoUrl={(url) =>
             firestoreSetDesignerPhotoUrl(currentDesigner.id, url)

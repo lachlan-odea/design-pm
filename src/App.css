@@ -33,6 +33,134 @@ body,
   color: var(--text);
 }
 
+/* Dark mode */
+:root.dark-mode {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-2: #334155;
+  --border: #475569;
+  --border-strong: #64748b;
+  --text: #f1f5f9;
+  --muted: #94a3b8;
+}
+
+:root.dark-mode .flag-indicator {
+  background: #5f3422;
+  border-color: #ea580c;
+  color: #fed7aa;
+}
+
+:root.dark-mode .flag-btn {
+  border-color: #475569;
+}
+
+:root.dark-mode .flag-btn:hover {
+  color: #fbbf24;
+  border-color: #fbbf24;
+}
+
+:root.dark-mode .flag-btn.flagged {
+  background: #5f3422;
+  border-color: #ea580c;
+  color: #fed7aa;
+}
+
+:root.dark-mode .review-section {
+  border-color: #7c2d12;
+  background: #431407;
+}
+
+:root.dark-mode .paused-section {
+  border-color: #1e293b;
+  background: #0f172a;
+}
+
+:root.dark-mode .completed-section {
+  border-color: #065f46;
+  background: #0f2818;
+}
+
+:root.dark-mode .project-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+:root.dark-mode .team-col-cards .project-card {
+  background: var(--surface-2);
+}
+
+:root.dark-mode .card-title {
+  color: #f1f5f9;
+}
+
+:root.dark-mode .card-client {
+  color: #cbd5e1;
+}
+
+:root.dark-mode .card-overdue-chip {
+  background: #dc2626;
+  color: white;
+}
+
+:root.dark-mode .modal {
+  background: var(--surface);
+  color: var(--text);
+}
+
+:root.dark-mode .modal-head {
+  border-bottom-color: var(--border);
+}
+
+:root.dark-mode .modal-foot {
+  background: var(--surface-2);
+  border-top-color: var(--border);
+}
+
+:root.dark-mode .modal-foot button {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .modal-foot button:hover {
+  background: #1e293b;
+}
+
+:root.dark-mode .modal-section h3 {
+  color: var(--text);
+}
+
+:root.dark-mode .field input,
+:root.dark-mode .field select,
+:root.dark-mode .field textarea {
+  background: var(--surface-2);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+:root.dark-mode .field input:focus,
+:root.dark-mode .field select:focus,
+:root.dark-mode .field textarea:focus {
+  border-color: var(--primary);
+}
+
+:root.dark-mode .primary {
+  background: var(--primary);
+}
+
+:root.dark-mode .primary:hover {
+  background: var(--primary-hover);
+}
+
+/* Text size adjustments */
+:root.text-small {
+  font-size: 14px;
+}
+
+:root.text-large {
+  font-size: 18px;
+}
+
 button {
   font: inherit;
   cursor: pointer;
@@ -1421,6 +1549,60 @@ textarea {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+
+.preference-group {
+  margin-bottom: 14px;
+}
+
+.preference-label {
+  display: block;
+  font-size: 12.5px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.theme-row,
+.size-row {
+  display: flex;
+  gap: 5px;
+  background: var(--surface-2);
+  padding: 3px;
+  border-radius: 9px;
+}
+
+.theme-btn,
+.size-btn {
+  flex: 1;
+  background: none;
+  border: 0;
+  font: inherit;
+  font-weight: 500;
+  color: var(--muted);
+  padding: 6px 0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  font-size: 14px;
+}
+
+.theme-btn.on,
+.size-btn.on {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(21, 26, 33, 0.04), 0 1px 3px rgba(21, 26, 33, 0.03);
+}
+
+.size-btn {
+  font-weight: 600;
+  line-height: 1;
+}
+
+.s1 { font-size: 12px; }
+.s2 { font-size: 14px; }
+.s3 { font-size: 16px; }
 .field {
   display: flex;
   flex-direction: column;

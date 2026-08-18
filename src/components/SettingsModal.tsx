@@ -16,6 +16,10 @@ type Props = {
   // in the Reviewers section.
   reviewers: Designer[];
   workspaces: Workspace[];
+  darkMode: boolean;
+  onDarkModeChange: (enabled: boolean) => void;
+  textSize: "small" | "default" | "large";
+  onTextSizeChange: (size: "small" | "default" | "large") => void;
   onUpdateWorkspaceMembers: (
     workspaceId: string,
     memberIds: string[],
@@ -57,6 +61,10 @@ export function SettingsModal({
   superUsers,
   reviewers,
   workspaces,
+  darkMode,
+  onDarkModeChange,
+  textSize,
+  onTextSizeChange,
   onUpdateWorkspaceMembers,
   onUpdatePhotoUrl,
   onUpdateDesignerSuperUser,
@@ -154,6 +162,55 @@ export function SettingsModal({
             currentDesigner={currentDesigner}
             onSave={onUpdatePhotoUrl}
           />
+
+          <section className="modal-section">
+            <h3>Display</h3>
+            <div className="preference-group">
+              <label className="preference-label">Theme</label>
+              <div className="theme-row">
+                <button
+                  className={`theme-btn ${!darkMode ? "on" : ""}`}
+                  onClick={() => onDarkModeChange(false)}
+                  title="Light mode"
+                >
+                  Light
+                </button>
+                <button
+                  className={`theme-btn ${darkMode ? "on" : ""}`}
+                  onClick={() => onDarkModeChange(true)}
+                  title="Dark mode"
+                >
+                  Dark
+                </button>
+              </div>
+            </div>
+            <div className="preference-group">
+              <label className="preference-label">Text size</label>
+              <div className="size-row">
+                <button
+                  className={`size-btn s1 ${textSize === "small" ? "on" : ""}`}
+                  onClick={() => onTextSizeChange("small")}
+                  title="Small"
+                >
+                  A
+                </button>
+                <button
+                  className={`size-btn s2 ${textSize === "default" ? "on" : ""}`}
+                  onClick={() => onTextSizeChange("default")}
+                  title="Default"
+                >
+                  A
+                </button>
+                <button
+                  className={`size-btn s3 ${textSize === "large" ? "on" : ""}`}
+                  onClick={() => onTextSizeChange("large")}
+                  title="Large"
+                >
+                  A
+                </button>
+              </div>
+            </div>
+          </section>
 
           <section className="modal-section">
             <h3>Change password</h3>
