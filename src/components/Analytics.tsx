@@ -255,6 +255,7 @@ export function Analytics({
     const urgentCount = live.filter((p) => p.priority === "Urgent").length;
     const completedCount = filtered.filter((p) => p.status === "completed").length;
     const pausedCount = filtered.filter((p) => p.status === "paused").length;
+    const planningCount = filtered.filter((p) => p.status === "planning").length;
     const archivedCount = filtered.filter((p) => p.archived).length;
 
     let totalMilestones = 0;
@@ -276,6 +277,8 @@ export function Analytics({
       dueThisWeek,
       completedCount,
       pausedCount,
+      planningCount,
+      activeCount: live.length,
       archivedCount,
       byPriority,
       byDesigner,
@@ -387,11 +390,17 @@ export function Analytics({
 
       <div className="kpi-row kpi-row-status">
         <Kpi
+          label="Planning"
+          value={stats.planningCount}
+          variant="planning"
+        />
+        <Kpi label="On hold" value={stats.pausedCount} variant="paused" />
+        <Kpi label="Active" value={stats.activeCount} variant="live" />
+        <Kpi
           label="Completed"
           value={stats.completedCount}
           variant="completed"
         />
-        <Kpi label="Paused" value={stats.pausedCount} variant="paused" />
         <Kpi
           label="Archived"
           value={stats.archivedCount}
@@ -509,7 +518,17 @@ function Kpi({
 }: {
   label: string;
   value: number | string;
-  variant?: "urgent" | "overdue" | "duesoon" | "completed" | "paused" | "archived";
+  variant?:
+    | "urgent"
+    | "overdue"
+    | "duesoon"
+    | "planning"
+    // "live" rather than "active": the variant becomes a class on .kpi, and
+    // .active is the app's ubiquitous selected-state class.
+    | "live"
+    | "completed"
+    | "paused"
+    | "archived";
 }) {
   return (
     <div className={`kpi ${variant ?? ""}`}>

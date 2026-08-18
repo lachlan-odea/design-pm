@@ -57,11 +57,14 @@ export function ProjectCard({
   const doneCount = project.milestones.filter((m) => m.done).length;
   const nextMilestone = project.milestones.find((m) => !m.done);
   const [dragging, setDragging] = useState(false);
-  // Only living work can be overdue — completed and archived projects keep a
-  // neutral due date so the column doesn't scream at finished items.
+  // Only live work can be overdue. Completed and archived projects keep a
+  // neutral due date so the column doesn't scream at finished items, and
+  // Planning is the same case from the other end — a date on unstarted work
+  // is a target, not a miss.
   const overdue =
     isPastDue(project.dueDate) &&
     project.status !== "completed" &&
+    project.status !== "planning" &&
     !project.archived;
   return (
     <button

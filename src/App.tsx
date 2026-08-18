@@ -76,6 +76,7 @@ export default function App() {
   const [filter, setFilter] = useState("");
   const [status, setStatus] = useState<string>("");
   const [dropOverColumn, setDropOverColumn] = useState<string | null>(null);
+  const [planningExpanded, setPlanningExpanded] = useState(true);
   const [pausedExpanded, setPausedExpanded] = useState(true);
   const [completedExpanded, setCompletedExpanded] = useState(true);
   const [darkMode, setDarkMode] = useState(() =>
@@ -316,6 +317,16 @@ export default function App() {
     [nonArchived],
   );
 
+  // Pre-work: scoped but not started. Excluded from activeProjects (which
+  // matches on "active"), so these never appear in the team columns.
+  const planningProjects = useMemo(
+    () =>
+      nonArchived
+        .filter((p) => p.status === "planning")
+        .sort(sortByPriorityThenDue),
+    [nonArchived],
+  );
+
   const completedProjects = useMemo(
     () =>
       nonArchived
@@ -448,6 +459,17 @@ export default function App() {
     firestoreSetProject(project).catch(writeError);
     setCreating(false);
     setCreateInitial(undefined);
+    // Now that the team is selectable, a new project can belong to a board
+    // other than the one in view. Follow it across, or the detail modal that
+    // opens next would be sitting over a board that doesn't contain it — and
+    // closing it would look like the project vanished.
+    if (project.workspaceId !== currentWorkspaceId) {
+      setCurrentWorkspaceId(project.workspaceId);
+    }
+    // The board only lists active projects; if we're on a view that would
+    // hide it, drop back to the board so the new project is actually visible
+    // behind the modal.
+    if (view !== "board") setView("board");
     setOpenProjectId(project.id);
   }
 
@@ -881,6 +903,40 @@ export default function App() {
               </div>
             </section>
 
+            {planningProjects.length > 0 && (
+              <section className="workspace-section planning-section">
+                <div className="section-head">
+                  <div className="section-head-title">
+                    <button
+                      className="collapse-toggle"
+                      onClick={() => setPlanningExpanded(!planningExpanded)}
+                      title={planningExpanded ? "Collapse" : "Expand"}
+                    >
+                      <span className={`collapse-icon ${planningExpanded ? "expanded" : ""}`}>&#9654;</span>
+                    </button>
+                    <h2>Planning</h2>
+                  </div>
+                  <span className="muted small">
+                    {planningProjects.length} project
+                    {planningProjects.length === 1 ? "" : "s"} not started &middot;
+                    open one to move it to Active
+                  </span>
+                </div>
+                {planningExpanded && (
+                  <div className="workspace-grid workspace-grid-scrollable">
+                    {planningProjects.map((p) => (
+                      <ProjectCard
+                        key={p.id}
+                        project={p}
+                        designers={workspace.designers}
+                        onClick={() => setOpenProjectId(p.id)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </section>
+            )}
+
             {pausedProjects.length > 0 && (
               <section className="workspace-section paused-section">
                 <div className="section-head">
@@ -892,7 +948,7 @@ export default function App() {
                     >
                       <span className={`collapse-icon ${pausedExpanded ? "expanded" : ""}`}>▶</span>
                     </button>
-                    <h2>Paused</h2>
+                    <h2>On hold</h2>
                   </div>
                   <span className="muted small">
                     {pausedProjects.length} project
@@ -980,6 +1036,8 @@ export default function App() {
       {creating && (
         <CreateProjectModal
           designers={workspace.designers}
+          workspaces={availableWorkspaces}
+          defaultWorkspaceId={currentWorkspaceId}
           defaultAssigneeId={sessionDesignerId}
           initial={createInitial}
           onCancel={() => {

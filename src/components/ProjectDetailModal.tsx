@@ -7,7 +7,7 @@ import type {
   ProjectStatus,
   Workspace,
 } from "../types";
-import { BRANDS } from "../constants";
+import { BRANDS, PROJECT_STATUSES } from "../constants";
 import { ContentTypeField } from "./ContentTypeField";
 import { LinkifiedText } from "./LinkifiedText";
 import { findMentionedDesigners, findNewMentions } from "../mentions";
@@ -43,11 +43,6 @@ type Props = {
 };
 
 const priorities: Priority[] = ["Urgent", "High", "Normal", "Low"];
-const statuses: { value: ProjectStatus; label: string }[] = [
-  { value: "active", label: "Active" },
-  { value: "completed", label: "Completed" },
-  { value: "paused", label: "Paused" },
-];
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
@@ -533,7 +528,7 @@ export function ProjectDetailModal({
               onChange={(e) => onStatusChange(e.target.value as ProjectStatus)}
               aria-label="Project status"
             >
-              {statuses.map((s) => (
+              {PROJECT_STATUSES.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}
                 </option>

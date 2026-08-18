@@ -1,6 +1,12 @@
 export type Priority = "Urgent" | "High" | "Normal" | "Low";
 
-export type ProjectStatus = "active" | "completed" | "paused";
+// Lifecycle order is Planning → Active → On hold → Completed. Note that the
+// stored value "paused" is displayed as "On hold": the value is already
+// persisted on live project docs, and renaming it would need a migration
+// where any missed doc would fall through the `?? "active"` default and
+// silently reappear as active work. Always render these through
+// projectStatusLabel() in constants.ts rather than printing the raw value.
+export type ProjectStatus = "planning" | "active" | "paused" | "completed";
 
 // An office location and the time zone it keeps. Managed by super users in
 // Settings → Locations & time zones, and shared by everyone: adding one puts

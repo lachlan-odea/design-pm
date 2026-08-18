@@ -1,11 +1,16 @@
-import { useEffect, useState } from "react";
-import type { Designer, Priority, Project } from "../types";
+import { useEffect, useMemo, useState } from "react";
+import type { Designer, Priority, Project, Workspace } from "../types";
 import { BRANDS } from "../constants";
 import { ContentTypeField } from "./ContentTypeField";
 import { AssigneePicker } from "./AssigneePicker";
 
 type Props = {
   designers: Designer[];
+  // Teams the project can be filed under.
+  workspaces: Workspace[];
+  // Pre-selected team. Normally whichever board you were looking at when you
+  // hit New project.
+  defaultWorkspaceId: string;
   defaultAssigneeId: string | null;
   initial?: Partial<Project>;
   onCancel: () => void;
@@ -16,11 +21,22 @@ const priorities: Priority[] = ["Urgent", "High", "Normal", "Low"];
 
 export function CreateProjectModal({
   designers,
+  workspaces,
+  defaultWorkspaceId,
   defaultAssigneeId,
   initial,
   onCancel,
   onCreate,
 }: Props) {
+  // An Outlook-supplied payload can name its own team; otherwise fall back to
+  // the board in view, and only then to the first team that exists.
+  const [workspaceId, setWorkspaceId] = useState(
+    () =>
+      initial?.workspaceId ??
+      defaultWorkspaceId ??
+      workspaces[0]?.id ??
+      "",
+  );
   const [title, setTitle] = useState(initial?.title ?? "");
   const [overview, setOverview] = useState(initial?.overview ?? "");
   const [client, setClient] = useState(initial?.client ?? "");
@@ -43,11 +59,27 @@ export function CreateProjectModal({
     return () => window.removeEventListener("keydown", onKey);
   }, [onCancel]);
 
+  const selectedWorkspace = workspaces.find((w) => w.id === workspaceId);
+
+  // Anyone can be assigned to a project regardless of team, but only a team's
+  // members get a column on its board — so an assignee who isn't a member
+  // would file the project somewhere they can't see it. Worth saying out loud
+  // now that the team is selectable; a team with no explicit members is open
+  // to everyone and can't trip this.
+  const outsiders = useMemo(() => {
+    const members = selectedWorkspace?.memberIds ?? [];
+    if (members.length === 0) return [];
+    return assigneeIds
+      .filter((id) => !members.includes(id))
+      .map((id) => designers.find((d) => d.id === id)?.name)
+      .filter((n): n is string => !!n);
+  }, [selectedWorkspace, assigneeIds, designers]);
+
   function submit() {
     if (!title.trim()) return;
     const project: Project = {
       id: initial?.id ?? `p-${Date.now()}`,
-      workspaceId: initial?.workspaceId ?? "design",
+      workspaceId,
       title: title.trim(),
       overview,
       client,
@@ -121,7 +153,23 @@ export function CreateProjectModal({
               <ContentTypeField value={contentType} onChange={setContentType} />
             </label>
             <label className="field">
-              <span>Brief URL</span>
+              <span>Team</span>
+              <select
+                value={workspaceId}
+                onChange={(e) => setWorkspaceId(e.target.value)}
+              >
+                {workspaces.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.name}
+                  </option>
+                ))}
+              </select>
+              <span className="field-hint">
+                Whose board this lands on. Movable later from the project.
+              </span>
+            </label>
+            <label className="field" style={{ gridColumn: "1 / -1" }}>
+              <span>URL</span>
               <input
                 value={briefUrl}
                 onChange={(e) => setBriefUrl(e.target.value)}
@@ -135,6 +183,14 @@ export function CreateProjectModal({
                 assigneeIds={assigneeIds}
                 onChange={setAssigneeIds}
               />
+              {outsiders.length > 0 && selectedWorkspace && (
+                <span className="field-hint warn">
+                  {outsiders.join(", ")}{" "}
+                  {outsiders.length === 1 ? "isn't" : "aren't"} in{" "}
+                  {selectedWorkspace.name}, so they won't get a column on that
+                  board. The project still appears in their My work.
+                </span>
+              )}
             </label>
           </div>
         </div>

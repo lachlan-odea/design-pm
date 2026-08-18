@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { Project, WorkspaceData } from "../types";
 import { ProjectCard } from "./ProjectCard";
 import { Avatar } from "./Avatar";
+import { projectStatusLabel } from "../constants";
 
 interface DashboardProps {
   workspace: WorkspaceData;
@@ -61,6 +62,9 @@ export function Dashboard({ workspace, currentDesignerId, onOpenProject }: Dashb
   const pausedCount = workspace.projects.filter(
     (p) => p.status === "paused"
   ).length;
+  const planningCount = workspace.projects.filter(
+    (p) => p.status === "planning"
+  ).length;
   const activeCount = allActiveProjects.length;
 
   const recentActivity = useMemo(() => {
@@ -90,16 +94,20 @@ export function Dashboard({ workspace, currentDesignerId, onOpenProject }: Dashb
         {/* Metrics Row */}
         <div className="dashboard-metrics">
           <div className="metric-card">
+            <div className="metric-label">Planning</div>
+            <div className="metric-value">{planningCount}</div>
+          </div>
+          <div className="metric-card">
             <div className="metric-label">Active Projects</div>
             <div className="metric-value">{activeCount}</div>
           </div>
           <div className="metric-card">
-            <div className="metric-label">Completed</div>
-            <div className="metric-value">{completedCount}</div>
+            <div className="metric-label">On hold</div>
+            <div className="metric-value">{pausedCount}</div>
           </div>
           <div className="metric-card">
-            <div className="metric-label">Paused</div>
-            <div className="metric-value">{pausedCount}</div>
+            <div className="metric-label">Completed</div>
+            <div className="metric-value">{completedCount}</div>
           </div>
           <div className="metric-card">
             <div className="metric-label">My Projects</div>
@@ -289,7 +297,7 @@ export function Dashboard({ workspace, currentDesignerId, onOpenProject }: Dashb
                   </div>
                   <div className="activity-col-status">
                     <span className="activity-status-badge">
-                      {p.status || "Active"}
+                      {projectStatusLabel(p.status)}
                     </span>
                   </div>
                   <div className="activity-col-due">

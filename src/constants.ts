@@ -1,3 +1,21 @@
+import type { ProjectStatus } from "./types";
+
+// The status picker's options, in lifecycle order. Single source of truth for
+// both the dropdown and every label rendered elsewhere — see the note on
+// ProjectStatus for why "paused" is stored but shown as "On hold".
+export const PROJECT_STATUSES: { value: ProjectStatus; label: string }[] = [
+  { value: "planning", label: "Planning" },
+  { value: "active", label: "Active" },
+  { value: "paused", label: "On hold" },
+  { value: "completed", label: "Completed" },
+];
+
+// A project with no status set predates the field and is treated as active.
+export function projectStatusLabel(status: ProjectStatus | undefined): string {
+  const value = status ?? "active";
+  return PROJECT_STATUSES.find((s) => s.value === value)?.label ?? "Active";
+}
+
 export const BRANDS = [
   "CargoWise",
   "CargoWise Landside",

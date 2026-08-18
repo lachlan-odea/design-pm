@@ -88,6 +88,25 @@ body,
   background: #431407;
 }
 
+:root.dark-mode .planning-section {
+  border-color: #3730a3;
+  background: #171a3a;
+}
+
+:root.dark-mode .status-select.status-planning {
+  background-color: #312e81;
+  border-color: #4f46e5;
+  color: #c7d2fe;
+}
+
+:root.dark-mode .kpi.planning .kpi-value {
+  color: #a5b4fc;
+}
+
+:root.dark-mode .kpi.live .kpi-value {
+  color: #67e8f9;
+}
+
 :root.dark-mode .paused-section {
   border-color: #1e293b;
   background: #0f172a;
@@ -1316,6 +1335,10 @@ textarea {
   border-color: #fdba74;
   background: #fffbf5;
 }
+.planning-section {
+  border-color: #c7d2fe;
+  background: #f5f6ff;
+}
 .paused-section {
   border-color: #cbd5e1;
   background: #f8fafc;
@@ -1367,6 +1390,11 @@ textarea {
   background-color: #e2e8f0;
   border-color: #94a3b8;
   color: #475569;
+}
+.status-select.status-planning {
+  background-color: #e0e7ff;
+  border-color: #a5b4fc;
+  color: #3730a3;
 }
 
 .mention {
@@ -1859,6 +1887,23 @@ textarea {
   padding: 1px 4px;
   border-radius: 4px;
   font-size: 11px;
+}
+/* `.field span` styles every span in a field as an uppercase, letter-spaced
+   label, and beats .field-hint on specificity. A hint rendered as a span
+   inside a field has to opt back out of that. */
+.field span.field-hint {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: none;
+  letter-spacing: normal;
+  line-height: 1.45;
+}
+.field span.field-hint.warn {
+  color: #b45309;
+}
+:root.dark-mode .field span.field-hint.warn {
+  color: #fbbf24;
 }
 
 .milestones {
@@ -3015,8 +3060,11 @@ textarea {
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 12px;
 }
+/* Was repeat(3, 1fr), which stranded the 4th status card on a row of its own
+   and had nowhere to put a 5th. Inherit .kpi-row's responsive tracks so the
+   row reflows to however many statuses exist. */
 .kpi-row-status {
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 .kpi {
   background: var(--surface);
@@ -3044,6 +3092,12 @@ textarea {
 }
 .kpi.duesoon .kpi-value {
   color: var(--high);
+}
+.kpi.planning .kpi-value {
+  color: #4f46e5;
+}
+.kpi.live .kpi-value {
+  color: #0891b2;
 }
 .kpi.completed .kpi-value {
   color: #16a34a;
