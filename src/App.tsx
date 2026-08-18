@@ -51,6 +51,9 @@ const PRIORITY_ORDER: Record<string, number> = {
   Low: 3,
 };
 
+// Sentinel for the Archive's "All teams" pill. Not a workspace id.
+const ARCHIVE_ALL_TEAMS = "__all__";
+
 function sortByPriorityThenDue(a: Project, b: Project): number {
   const dp = PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
   if (dp !== 0) return dp;
@@ -77,6 +80,10 @@ export default function App() {
   const [status, setStatus] = useState<string>("");
   const [dropOverColumn, setDropOverColumn] = useState<string | null>(null);
   const [planningExpanded, setPlanningExpanded] = useState(true);
+  // Which team the Archive is narrowed to. Independent of the board's
+  // currently-selected team, since the Archive spans all of them.
+  const [archiveTeamFilter, setArchiveTeamFilter] =
+    useState<string>(ARCHIVE_ALL_TEAMS);
   const [pausedExpanded, setPausedExpanded] = useState(true);
   const [completedExpanded, setCompletedExpanded] = useState(true);
   const [darkMode, setDarkMode] = useState(() =>
@@ -343,12 +350,58 @@ export default function App() {
     [nonArchived],
   );
 
-  const archivedProjects = useMemo(
-    () =>
-      visibleProjects
-        .filter((p) => p.archived)
-        .sort(sortByPriorityThenDue),
-    [visibleProjects],
+  // The Archive is deliberately global rather than scoped to the board you
+  // came in from. Archived work is a reference library, and having to
+  // remember which team a finished project lived on before you can find it
+  // defeats the point of having an archive at all. The team filter below
+  // narrows it for the cases where you do know.
+  const archivedProjects = useMemo(() => {
+    if (!workspace) return [];
+    const q = filter.trim().toLowerCase();
+    return workspace.projects
+      .filter((p) => p.archived)
+      .filter(
+        (p) =>
+          archiveTeamFilter === ARCHIVE_ALL_TEAMS ||
+          p.workspaceId === archiveTeamFilter,
+      )
+      .filter(
+        (p) =>
+          !q ||
+          [p.title, p.client, p.brand, p.contentType]
+            .join(" ")
+            .toLowerCase()
+            .includes(q),
+      )
+      .sort(sortByPriorityThenDue);
+  }, [workspace, filter, archiveTeamFilter]);
+
+  // Per-team totals for the filter pills, ignoring the team filter itself so
+  // the counts don't collapse to zero as soon as you pick one. The search box
+  // is honoured, so the pills tell you where your search actually matched.
+  const archivedCountsByTeam = useMemo(() => {
+    const counts = new Map<string, number>();
+    if (!workspace) return counts;
+    const q = filter.trim().toLowerCase();
+    workspace.projects
+      .filter((p) => p.archived)
+      .filter(
+        (p) =>
+          !q ||
+          [p.title, p.client, p.brand, p.contentType]
+            .join(" ")
+            .toLowerCase()
+            .includes(q),
+      )
+      .forEach((p) => {
+        counts.set(p.workspaceId, (counts.get(p.workspaceId) ?? 0) + 1);
+      });
+    return counts;
+  }, [workspace, filter]);
+
+  const archivedTotal = useMemo(
+    () => [...archivedCountsByTeam.values()].reduce((a, b) => a + b, 0),
+    [archivedCountsByTeam],
   );
 
   // "My work" is global — every active project assigned to me regardless
@@ -677,7 +730,13 @@ export default function App() {
               {view === "analytics"
                 ? "Filter by team, date range, and export — see the filter row below"
                 : view === "archived"
-                  ? `${archivedProjects.length} archived project${archivedProjects.length === 1 ? "" : "s"} in ${currentWorkspaceName}`
+                  ? `${archivedProjects.length} archived project${archivedProjects.length === 1 ? "" : "s"} · ${
+                      archiveTeamFilter === ARCHIVE_ALL_TEAMS
+                        ? "all teams"
+                        : (availableWorkspaces.find(
+                            (w) => w.id === archiveTeamFilter,
+                          )?.name ?? archiveTeamFilter)
+                    }`
                   : view === "myDesk"
                     ? "Focus on your assigned projects, deadlines, and priorities"
                     : view === "executiveDashboard"
@@ -721,13 +780,38 @@ export default function App() {
             <div className="section-head">
               <h2>Archived</h2>
               <span className="muted small">
-                Open a project and click Unarchive to bring it back.
+                Every team's archived work. Open a project and click Unarchive
+                to bring it back.
               </span>
             </div>
+
+            <div className="filter-quick archive-filter">
+              <button
+                className={
+                  archiveTeamFilter === ARCHIVE_ALL_TEAMS ? "active" : ""
+                }
+                onClick={() => setArchiveTeamFilter(ARCHIVE_ALL_TEAMS)}
+              >
+                All teams ({archivedTotal})
+              </button>
+              {availableWorkspaces.map((w) => (
+                <button
+                  key={w.id}
+                  className={archiveTeamFilter === w.id ? "active" : ""}
+                  onClick={() => setArchiveTeamFilter(w.id)}
+                >
+                  {w.name} ({archivedCountsByTeam.get(w.id) ?? 0})
+                </button>
+              ))}
+            </div>
+
             {archivedProjects.length === 0 ? (
               <p className="muted">
-                Nothing archived yet. Archive a project from its detail window
-                to tuck it out of the way.
+                {archivedTotal === 0
+                  ? filter.trim()
+                    ? `Nothing archived matches “${filter.trim()}”.`
+                    : "Nothing archived yet. Archive a project from its detail window to tuck it out of the way."
+                  : "Nothing archived for this team. Try All teams."}
               </p>
             ) : (
               <div className="workspace-grid">
@@ -737,6 +821,15 @@ export default function App() {
                     project={p}
                     designers={workspace.designers}
                     onClick={() => setOpenProjectId(p.id)}
+                    // Only worth labelling when teams are mixed together —
+                    // redundant once you've filtered to one.
+                    teamBadge={
+                      archiveTeamFilter === ARCHIVE_ALL_TEAMS
+                        ? (availableWorkspaces.find(
+                            (w) => w.id === p.workspaceId,
+                          )?.name ?? p.workspaceId)
+                        : undefined
+                    }
                   />
                 ))}
               </div>

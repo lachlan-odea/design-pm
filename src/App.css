@@ -1351,6 +1351,11 @@ textarea {
   border-color: #cbd5e1;
   background: #f1f5f9;
 }
+/* Team filter pills in the Archive. Reuses .filter-quick's pill styling from
+   the Analytics filter bar; this only adds the spacing. */
+.archive-filter {
+  margin: 0 0 14px;
+}
 
 .modal-head-actions {
   display: flex;
