@@ -5,12 +5,15 @@ import {
   getDoc,
   getDocs,
   onSnapshot,
+  query,
   setDoc,
+  where,
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { DEFAULT_WORKSPACE_ID, SEED_WORKSPACES } from "./constants";
 import type {
+  DeskItem,
   Designer,
   Notification,
   Project,
@@ -22,6 +25,7 @@ const designersCol = () => collection(db, "designers");
 const workspacesCol = () => collection(db, "workspaces");
 const projectsCol = () => collection(db, "projects");
 const notificationsCol = () => collection(db, "notifications");
+const deskItemsCol = () => collection(db, "deskItems");
 
 // Backfill missing workspaceId on legacy docs that predate the multi-
 // workspace feature. They all belonged to the original Design workspace.
@@ -346,6 +350,46 @@ export async function setWorkspaceMembers(
     { memberIds },
     { merge: true },
   );
+}
+
+// ── My Desk checklist ──────────────────────────────────────────────────
+// Deliberately a separate subscription from subscribeWorkspace: desk items
+// are private to one person, so we query by ownerId rather than pulling the
+// whole collection down and filtering client-side. Kept out of
+// WorkspaceData so the board isn't waiting on it to render.
+
+export function subscribeDeskItems(
+  ownerId: string,
+  onChange: (items: DeskItem[]) => void,
+  onError: (err: Error) => void,
+): () => void {
+  return onSnapshot(
+    query(deskItemsCol(), where("ownerId", "==", ownerId)),
+    (snap) => onChange(snap.docs.map((d) => d.data() as DeskItem)),
+    onError,
+  );
+}
+
+export async function setDeskItem(item: DeskItem): Promise<void> {
+  await setDoc(doc(deskItemsCol(), item.id), item);
+}
+
+export async function deleteDeskItem(id: string): Promise<void> {
+  await deleteDoc(doc(deskItemsCol(), id));
+}
+
+// Batched multi-write used by the daily housekeeping in MyDesk (rolling
+// yesterday's leftovers forward, promoting due reminders, sweeping old
+// completed items). One commit so a half-applied rollover is impossible.
+export async function applyDeskItemChanges(
+  updated: DeskItem[],
+  removedIds: string[],
+): Promise<void> {
+  if (updated.length === 0 && removedIds.length === 0) return;
+  const batch = writeBatch(db);
+  updated.forEach((item) => batch.set(doc(deskItemsCol(), item.id), item));
+  removedIds.forEach((id) => batch.delete(doc(deskItemsCol(), id)));
+  await batch.commit();
 }
 
 // Ensures the seed workspaces (Design / Video / Marketing) exist in the

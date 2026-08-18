@@ -629,14 +629,8 @@ export default function App() {
                     — your work at a glance
                   </span>
                 </>
-              ) : view === "executiveSummary" ? (
-                <>
-                  Executive Summary
-                  <span className="topbar-sub">
-                    {" "}
-                    — {currentWorkspaceName}
-                  </span>
-                </>
+              ) : view === "executiveDashboard" ? (
+                "Executive Dashboard"
               ) : (
                 <>
                   {currentDesigner.name}
@@ -654,7 +648,7 @@ export default function App() {
                   ? `${archivedProjects.length} archived project${archivedProjects.length === 1 ? "" : "s"} in ${currentWorkspaceName}`
                   : view === "myDesk"
                     ? "Focus on your assigned projects, deadlines, and priorities"
-                    : view === "executiveSummary"
+                    : view === "executiveDashboard"
                       ? "View all projects, deadlines, and recent activity"
                       : `${myProjects.length} project${myProjects.length === 1 ? "" : "s"} assigned · ${currentWorkspaceName}`}
               {" · live"}
@@ -722,7 +716,7 @@ export default function App() {
             currentDesignerId={sessionDesignerId}
             onOpenProject={setOpenProjectId}
           />
-        ) : view === "executiveSummary" ? (
+        ) : view === "executiveDashboard" ? (
           <Dashboard
             workspace={workspace}
             currentDesignerId={sessionDesignerId}

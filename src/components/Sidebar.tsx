@@ -3,7 +3,7 @@ import type { Designer, Workspace } from "../types";
 import { Avatar } from "./Avatar";
 import { readDraggedProjectId } from "../dnd";
 
-export type SidebarView = "myDesk" | "executiveSummary" | "board" | "analytics" | "archived";
+export type SidebarView = "myDesk" | "executiveDashboard" | "board" | "analytics" | "archived";
 
 type Props = {
   currentDesigner: Designer;
@@ -291,14 +291,14 @@ export function Sidebar({
         <ul className="designer-list">
           <li>
             <button
-              className={`designer-btn ${view === "executiveSummary" ? "active" : ""}`}
-              onClick={() => onSelectView("executiveSummary")}
-              title="Executive Summary"
+              className={`designer-btn ${view === "executiveDashboard" ? "active" : ""}`}
+              onClick={() => onSelectView("executiveDashboard")}
+              title="Executive Dashboard"
             >
               <span className="dot-avatar" style={{ background: "#8b5cf6" }}>
                 <DashboardGlyph />
               </span>
-              {!collapsed && <span className="designer-name">Executive Summary</span>}
+              {!collapsed && <span className="designer-name">Executive Dashboard</span>}
             </button>
           </li>
           <li>

@@ -176,33 +176,43 @@ body,
   border-color: var(--border);
 }
 
-:root.dark-mode .recharts-default-tooltip {
-  background: var(--surface) !important;
-  color: var(--text) !important;
+/* The desk checklist is built on the theme variables, so only the two
+   hard-coded light-mode colours need a dark counterpart. */
+:root.dark-mode .desk-banner.error {
+  background: rgba(239, 68, 68, 0.14);
+  border-color: #7f1d1d;
+  color: #fca5a5;
 }
 
-:root.dark-mode .recharts-legend-wrapper {
-  color: var(--text) !important;
+:root.dark-mode .desk-row:hover {
+  background: var(--surface-2);
 }
 
+/* Analytics KPI figures. The light-mode values for these three are slate
+   greys picked against a white card — #475569 is *identical* to --border in
+   dark mode, so "Paused" was rendering at roughly 1.7:1 against the card and
+   read as blank. Lifted to the 300/400 end of each ramp. */
+:root.dark-mode .kpi.completed .kpi-value {
+  color: #4ade80;
+}
+
+:root.dark-mode .kpi.paused .kpi-value {
+  color: #cbd5e1;
+}
+
+:root.dark-mode .kpi.archived .kpi-value {
+  color: #94a3b8;
+}
+
+/* Chart colours live in src/chartTheme.ts, not here. Recharts takes axis
+   tick fills, tooltip styling and the hover cursor as inline props, and an
+   earlier attempt to override them from CSS made things worse: a blanket
+   `!important` on .recharts-cartesian-axis-tick-value forced the category
+   labels (designer names, content types) to --muted, which is exactly the
+   dark-on-dark text it was meant to fix. The only rule left here is the
+   legend label, which Recharts renders as real HTML. */
 :root.dark-mode .recharts-legend-item-text {
   color: var(--text) !important;
-}
-
-:root.dark-mode .recharts-surface {
-  background: transparent !important;
-}
-
-:root.dark-mode .recharts-text {
-  fill: var(--text) !important;
-}
-
-:root.dark-mode .recharts-axis-label {
-  fill: var(--text) !important;
-}
-
-:root.dark-mode .recharts-cartesian-axis-tick-value {
-  fill: var(--muted) !important;
 }
 
 :root.dark-mode .archived-section {
@@ -2371,17 +2381,373 @@ textarea {
   color: var(--muted);
 }
 
-.priority-badge {
+/* NB: .priority-badge itself is defined once, further down with the
+   dashboard styles — it's a pill, not a square. An earlier duplicate here
+   set width/height to 54px, which the later rule didn't reset, so every
+   badge rendered as an oversized block that broke out of its card. */
+
+.mydesk .deadline-item .priority-badge {
+  align-self: center;
+}
+
+/* ── My Desk checklist (Today / Upcoming / Completed) ─────────────── */
+
+.desk-banner {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.desk-banner.error {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.desk-panels {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+/* Today is the panel people actually work out of, so it gets the full width
+   when there's room rather than sharing a row. */
+.desk-panels > .desk-panel:first-child {
+  grid-column: 1 / -1;
+}
+
+.desk-head-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.desk-addrow {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.desk-addrow input {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.desk-addrow input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+  border-color: var(--primary);
+}
+
+.btn-mini {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 7px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-mini:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-mini:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-mini.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: white;
+  padding: 7px 12px;
+  font-size: 13px;
+}
+
+.btn-mini.primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  color: white;
+}
+
+.desk-undobar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.desk-undobar span {
+  flex: 1;
+}
+
+.desk-dismiss {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.desk-dismiss:hover {
+  color: var(--text);
+}
+
+.desk-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.desk-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 8px;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.desk-row:hover {
+  background: var(--surface-2);
+}
+
+.desk-tickbox {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  border-radius: 5px;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  padding: 0;
+}
+
+.desk-tickbox:hover {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.12);
+}
+
+.desk-tickdone {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  border-radius: 5px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  width: 54px;
-  height: 54px;
+  font-size: 12px;
+}
+
+.desk-body {
+  flex: 1;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.desk-body input {
+  padding: 5px 8px;
+  border: 1px solid var(--primary);
   border-radius: 6px;
-  color: white;
-  font-weight: 600;
-  font-size: 11px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+
+.desk-text {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.desk-text.struck {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.desk-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* Row actions stay hidden until hover so a long list reads as a list, not a
+   wall of links. Always visible on touch / narrow screens (below). */
+.desk-actions {
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.desk-row:hover .desk-actions,
+.desk-row:focus-within .desk-actions {
+  opacity: 1;
+}
+
+.desk-link {
+  background: none;
+  border: 0;
+  color: var(--primary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+}
+
+.desk-link:hover {
+  text-decoration: underline;
+}
+
+.desk-link.danger {
+  color: #ef4444;
+}
+
+.desk-select {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+
+.desk-select input {
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.desk-calbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.desk-spacer {
+  flex: 1;
+}
+
+.desk-movebox {
+  width: 100%;
+  padding: 8px 8px 12px 39px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.desk-movetabs {
+  display: flex;
+  gap: 4px;
+}
+
+.desk-mtab {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.desk-mtab.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.08);
+}
+
+.desk-moverow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.desk-moverow input {
+  padding: 6px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.desk-lbl {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.desk-hint {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Shortcut on a project row in "My Projects" that drops it onto today's
+   list without retyping the title. */
+.desk-addtoday {
+  width: 100%;
+  margin-top: 10px;
+  background: none;
+  border: 1px dashed var(--border);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  padding: 6px 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.desk-addtoday:hover {
+  border-style: solid;
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+@media (max-width: 720px) {
+  .desk-actions {
+    opacity: 1;
+  }
 }
 
 /* Drag and drop */

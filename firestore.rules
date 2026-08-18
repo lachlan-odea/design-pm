@@ -20,5 +20,21 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow read, write: if request.auth != null;
     }
+    // My Desk checklist items are private to one person, so unlike the
+    // collections above these are locked to their owner rather than to any
+    // signed-in user. Reads are constrained by the ownerId == uid filter the
+    // client query already sends; writes check the ownerId on the document
+    // itself (both the incoming one and, for deletes, the stored one).
+    match /deskItems/{deskItemId} {
+      allow read: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if request.auth != null
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if request.auth != null
+        && resource.data.ownerId == request.auth.uid;
+    }
   }
 }

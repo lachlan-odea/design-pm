@@ -85,6 +85,43 @@ export type Notification = {
   read: boolean;
 };
 
+// A single line on somebody's personal My Desk checklist. Private to its
+// owner — nothing here is shared with the team, and ticking an item off
+// never touches the project it was created from.
+//
+// The three panels on My Desk are all views over this one list:
+//   Today     — !done && !remind && date <= today
+//   Upcoming  — !done && (remind || date > today)
+//   Completed — done (swept 14 days after completedOn)
+//
+// `remind: true` parks an item in Upcoming with a countdown instead of
+// silently waiting for its date; when remindTime arrives on remindDate the
+// sweep in MyDesk converts it into a plain item for today.
+export type DeskItem = {
+  id: string;
+  // Designer id (= Firebase UID) this item belongs to.
+  ownerId: string;
+  text: string;
+  // YYYY-MM-DD, local. The day this item lands on the owner's Today list.
+  date: string;
+  done: boolean;
+  completedOn?: string;
+  // How many times this rolled over from an earlier day untouched. Surfaced
+  // in the UI because an item that's rolled five times usually needs
+  // breaking up rather than doing.
+  rolled?: number;
+  remind?: boolean;
+  // HH:MM, 24h, local. Only meaningful when remind is true.
+  remindTime?: string;
+  // Set when the sweep promoted a reminder onto the Today list, so the row
+  // can explain where it came from.
+  fromReminder?: boolean;
+  // Optional link back to a project. Purely a shortcut — completing the
+  // desk item leaves the project's status alone.
+  projectId?: string;
+  createdAt: string;
+};
+
 // The in-memory snapshot of everything App.tsx needs to render. Loaded
 // progressively via the Firestore subscriptions in firestore.ts.
 export type WorkspaceData = {

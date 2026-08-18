@@ -15,6 +15,7 @@ import {
   YAxis,
 } from "recharts";
 import type { Designer, Priority, Project, Workspace } from "../types";
+import { useChartTheme } from "../chartTheme";
 
 type Props = {
   // Every project across every workspace. Analytics filters this down based
@@ -164,6 +165,7 @@ export function Analytics({
   workspaces,
   canViewByDesigner,
 }: Props) {
+  const chartTheme = useChartTheme();
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   // Default to All workspaces so the page opens on the broadest view; users
@@ -421,13 +423,16 @@ export function Analytics({
                   </Pie>
                   <Tooltip
                     formatter={(value) => [value, "projects"]}
+                    contentStyle={chartTheme.tooltipContentStyle}
+                    labelStyle={chartTheme.tooltipLabelStyle}
+                    itemStyle={chartTheme.tooltipItemStyle}
                   />
                   <Legend
                     verticalAlign="middle"
                     align="right"
                     layout="vertical"
                     iconType="circle"
-                    wrapperStyle={{ fontSize: 12 }}
+                    wrapperStyle={chartTheme.legendStyle}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -523,6 +528,7 @@ function CompletionKpi({
   total: number;
   pct: number;
 }) {
+  const theme = useChartTheme();
   return (
     <div className="kpi kpi-gauge">
       <div>
@@ -548,7 +554,11 @@ function CompletionKpi({
               tick={false}
               axisLine={false}
             />
-            <RadialBar dataKey="value" cornerRadius={8} background />
+            <RadialBar
+              dataKey="value"
+              cornerRadius={8}
+              background={{ fill: theme.gaugeTrack }}
+            />
           </RadialBarChart>
         </ResponsiveContainer>
       </div>
@@ -568,6 +578,7 @@ function CategoryBars({
   height?: number;
 }) {
   const chartHeight = height ?? Math.max(180, data.length * 32);
+  const theme = useChartTheme();
   return (
     <div className="chart-wrap" style={{ height: chartHeight }}>
       <ResponsiveContainer width="100%" height="100%">
@@ -579,21 +590,24 @@ function CategoryBars({
           <XAxis
             type="number"
             allowDecimals={false}
-            tick={{ fontSize: 11, fill: "#6b7280" }}
+            tick={{ fontSize: 11, fill: theme.axisTick }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
             type="category"
             dataKey="label"
-            tick={{ fontSize: 12, fill: "#1d2433" }}
+            tick={{ fontSize: 12, fill: theme.axisLabel }}
             axisLine={false}
             tickLine={false}
             width={120}
           />
           <Tooltip
-            cursor={{ fill: "rgba(15, 23, 42, 0.04)" }}
+            cursor={{ fill: theme.cursorFill }}
             formatter={(value) => [value, "projects"]}
+            contentStyle={theme.tooltipContentStyle}
+            labelStyle={theme.tooltipLabelStyle}
+            itemStyle={theme.tooltipItemStyle}
           />
           <Bar dataKey="count" radius={[0, 6, 6, 0]}>
             {data.map((row, i) => (
