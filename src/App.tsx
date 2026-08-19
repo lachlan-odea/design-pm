@@ -230,16 +230,53 @@ export default function App() {
     }
   }, [sessionDesignerId]);
 
-  // Open a specific project from ?project=<id>. Used by the reviewer
-  // notification email link so the modal opens directly on the named
-  // project. Waits until workspace data is loaded so we can resolve the id
-  // and also flip to the project's team — otherwise the modal would be
-  // sitting over a confusingly different board.
+  // Project id handed to an already-running installed app by the PWA launch
+  // queue, parked here until the workspace has loaded and we can resolve it.
+  const [pendingLaunchProjectId, setPendingLaunchProjectId] = useState<
+    string | null
+  >(null);
+
+  // With launch_handler.client_mode "focus-existing", a captured link focuses
+  // the open app window and delivers the URL here rather than navigating —
+  // so without this consumer the window would come to the front and do
+  // nothing. Registered once on mount and never torn down: launchQueue
+  // buffers launches until a consumer exists, but only hands the backlog to
+  // the first one, so re-registering would drop it.
+  useEffect(() => {
+    const queue = (
+      window as unknown as {
+        launchQueue?: {
+          setConsumer: (c: (params: { targetURL?: string }) => void) => void;
+        };
+      }
+    ).launchQueue;
+    if (!queue) return;
+    queue.setConsumer((params) => {
+      if (!params?.targetURL) return;
+      try {
+        const id = new URL(
+          params.targetURL,
+          window.location.href,
+        ).searchParams.get("project");
+        if (id) setPendingLaunchProjectId(id);
+      } catch {
+        // A target URL we can't parse is nothing we can act on.
+      }
+    });
+  }, []);
+
+  // Open a specific project from ?project=<id>. Reached three ways: a cold
+  // start on a shared link, the reviewer notification email, and a captured
+  // link arriving via the launch queue above. Waits until workspace data is
+  // loaded so we can resolve the id and also flip to the project's team —
+  // otherwise the modal would be sitting over a confusingly different board.
   useEffect(() => {
     if (!sessionDesignerId || !workspace) return;
     const params = new URLSearchParams(window.location.search);
-    const id = params.get("project");
+    const fromAddressBar = params.get("project");
+    const id = pendingLaunchProjectId ?? fromAddressBar;
     if (!id) return;
+
     const project = workspace.projects.find((p) => p.id === id);
     if (project) {
       setCurrentWorkspaceId(project.workspaceId);
@@ -252,10 +289,16 @@ export default function App() {
         message: "That project link is no longer valid — it may have been deleted.",
       });
     }
-    params.delete("project");
-    const url = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
-    window.history.replaceState({}, "", url);
-  }, [sessionDesignerId, workspace]);
+
+    if (pendingLaunchProjectId) setPendingLaunchProjectId(null);
+    // Only a cold start puts the param in the address bar; a launch-queue
+    // hand-off doesn't navigate, so there's nothing to tidy there.
+    if (fromAddressBar) {
+      params.delete("project");
+      const url = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+      window.history.replaceState({}, "", url);
+    }
+  }, [sessionDesignerId, workspace, pendingLaunchProjectId]);
 
   const currentDesigner = useMemo(
     () =>
