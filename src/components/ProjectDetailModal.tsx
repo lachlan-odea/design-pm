@@ -11,6 +11,7 @@ import { BRANDS, PROJECT_STATUSES } from "../constants";
 import { ContentTypeField } from "./ContentTypeField";
 import { LinkifiedText } from "./LinkifiedText";
 import { findMentionedDesigners, findNewMentions } from "../mentions";
+import { copyText, projectShareUrl } from "../share";
 import { Avatar } from "./Avatar";
 import { AssigneePicker } from "./AssigneePicker";
 
@@ -108,6 +109,11 @@ export function ProjectDetailModal({
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  // "copied" / "failed" revert to idle so the button doesn't sit lying about
+  // the outcome of a copy from five minutes ago.
+  const [shareState, setShareState] = useState<"idle" | "copied" | "failed">(
+    "idle",
+  );
   // Inline edit state for milestones. `id` is the row being edited and
   // `label` is the in-progress text — null means no edit in flight.
   const [editingMilestone, setEditingMilestone] = useState<{
@@ -138,6 +144,17 @@ export function ProjectDetailModal({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
+
+  useEffect(() => {
+    if (shareState === "idle") return;
+    const timer = window.setTimeout(() => setShareState("idle"), 2500);
+    return () => window.clearTimeout(timer);
+  }, [shareState]);
+
+  async function copyShareLink() {
+    const ok = await copyText(projectShareUrl(project.id));
+    setShareState(ok ? "copied" : "failed");
+  }
 
   function buildNotifications(
     recipients: Designer[],
@@ -522,6 +539,17 @@ export function ProjectDetailModal({
             </div>
           </div>
           <div className="modal-head-actions">
+            <button
+              className="share-btn"
+              onClick={copyShareLink}
+              title={`Copy a link to this project — ${projectShareUrl(project.id)}`}
+            >
+              {shareState === "copied"
+                ? "Link copied"
+                : shareState === "failed"
+                  ? "Copy failed"
+                  : "Copy link"}
+            </button>
             <select
               className={`status-select status-${project.status ?? "active"}`}
               value={project.status ?? "active"}

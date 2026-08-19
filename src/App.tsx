@@ -97,7 +97,8 @@ export default function App() {
   // `undo` reverts the move and clears the toast.
   const [toast, setToast] = useState<{
     message: string;
-    undo: () => void;
+    // Optional: a toast can be a plain notice with nothing to reverse.
+    undo?: () => void;
   } | null>(null);
   // Which workspace tab is currently active (Design / Video / Marketing).
   // Persisted per browser so a refresh keeps you on the same workspace.
@@ -243,6 +244,13 @@ export default function App() {
     if (project) {
       setCurrentWorkspaceId(project.workspaceId);
       setOpenProjectId(id);
+    } else {
+      // Someone shared a link to a project that's since been deleted. Say so
+      // — stripping the param and showing an ordinary board leaves the
+      // recipient thinking the link worked and the project was empty.
+      setToast({
+        message: "That project link is no longer valid — it may have been deleted.",
+      });
     }
     params.delete("project");
     const url = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
@@ -1195,9 +1203,11 @@ export default function App() {
       {toast && (
         <div className="toast" role="status">
           <span>{toast.message}</span>
-          <button className="toast-undo" onClick={toast.undo}>
-            Undo
-          </button>
+          {toast.undo && (
+            <button className="toast-undo" onClick={toast.undo}>
+              Undo
+            </button>
+          )}
           <button
             className="toast-close"
             onClick={() => setToast(null)}
