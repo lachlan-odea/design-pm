@@ -225,6 +225,12 @@ body,
   background: var(--surface-2);
 }
 
+/* The one hard-coded colour in the notification rows. */
+:root.dark-mode .notify-tag.review {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fdba74;
+}
+
 /* Analytics KPI figures. The light-mode values for these three are slate
    greys picked against a white card — #475569 is *identical* to --border in
    dark mode, so "Paused" was rendering at roughly 1.7:1 against the card and
@@ -2673,6 +2679,105 @@ textarea {
 .manage-user-localtime {
   margin-left: 6px;
   font-variant-numeric: tabular-nums;
+}
+
+/* ── My Desk notifications ────────────────────────────────────────── */
+
+.mydesk-notify {
+  margin-bottom: 24px;
+}
+
+.notify-group {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 4px 0 8px;
+}
+
+.notify-group + .notify-list {
+  margin-bottom: 14px;
+}
+
+.notify-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notify-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.notify-row:hover {
+  border-color: var(--primary);
+  background: var(--surface);
+}
+
+.notify-tag {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 7px;
+  border-radius: 5px;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--primary);
+  margin-top: 1px;
+}
+
+/* Review requests are the one item here that blocks somebody else, so they
+   get the warmer colour. */
+.notify-tag.review {
+  background: rgba(249, 115, 22, 0.14);
+  color: #c2410c;
+}
+
+.notify-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notify-title {
+  font-size: 13.5px;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.notify-snippet {
+  font-size: 12px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notify-when {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  margin-top: 2px;
 }
 
 /* ── My Desk checklist (Today / Upcoming / Completed) ─────────────── */

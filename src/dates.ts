@@ -70,6 +70,22 @@ export function formatLong(iso: string | undefined): string {
   });
 }
 
+// Relative age of a full ISO timestamp, e.g. "just now" / "12m ago" / "3d
+// ago". For calendar dates use countdownLabel instead — this one is for
+// things that happened at a moment (a comment, a mention).
+export function timeAgo(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (isNaN(then)) return "";
+  const min = Math.round((Date.now() - then) / 60000);
+  if (min < 1) return "just now";
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.round(hr / 24);
+  if (day < 7) return `${day}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
 // "today" / "tomorrow" / "in 4 days" / "3 days ago" — used for reminder
 // countdowns, where a bare date reads as more work than a relative phrase.
 export function countdownLabel(iso: string | undefined): string {

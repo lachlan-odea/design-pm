@@ -1,6 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { DeskItem, Project, WorkspaceData } from "../types";
+import type { DeskItem, Notification, Project, WorkspaceData } from "../types";
 import { Avatar } from "./Avatar";
+import {
+  describeNotification,
+  notificationTag,
+  sortNotifications,
+} from "../notifications";
+import { timeAgo } from "../dates";
 import { DeskChecklist, KEEP_COMPLETED_DAYS } from "./DeskChecklist";
 import {
   applyDeskItemChanges,
@@ -21,6 +27,16 @@ interface MyDeskProps {
   workspace: WorkspaceData;
   currentDesignerId: string;
   onOpenProject: (id: string) => void;
+  // Notifications addressed to this user — @-mentions, replies, likes. Passed
+  // in rather than derived here so App stays the single place that decides
+  // what counts as "mine".
+  notifications: Notification[];
+  // Active projects this user has been asked to review.
+  reviewProjects: Project[];
+  // Opens the project and dismisses the notification, matching what the bell
+  // panel does — a notification you've acted on shouldn't linger.
+  onOpenNotification: (projectId: string, notificationId: string) => void;
+  onClearNotifications: () => void;
 }
 
 const PRIORITY_ORDER: Record<string, number> = {
@@ -54,6 +70,10 @@ export function MyDesk({
   workspace,
   currentDesignerId,
   onOpenProject,
+  notifications,
+  reviewProjects,
+  onOpenNotification,
+  onClearNotifications,
 }: MyDeskProps) {
   const [deskItems, setDeskItems] = useState<DeskItem[]>([]);
   const [deskError, setDeskError] = useState<string | null>(null);
@@ -391,6 +411,105 @@ export function MyDesk({
             </section>
           )}
       </div>
+
+      {/* Things other people have directed at you, as distinct from the cards
+          above, which are derived from your own projects' dates. */}
+      <section className="mydesk-section mydesk-notify">
+        <div className="mydesk-section-head">
+          <h3>Notifications</h3>
+          <div className="desk-head-right">
+            <span className="badge">
+              {notifications.length + reviewProjects.length}
+            </span>
+            {notifications.length > 0 && (
+              <button
+                type="button"
+                className="desk-link"
+                onClick={onClearNotifications}
+              >
+                Clear all
+              </button>
+            )}
+          </div>
+        </div>
+
+        {notifications.length === 0 && reviewProjects.length === 0 ? (
+          <p className="muted small">
+            Nothing new. @-mentions, replies and review requests land here.
+          </p>
+        ) : (
+          <>
+            {reviewProjects.length > 0 && (
+              <>
+                <div className="notify-group">Awaiting your review</div>
+                <ul className="notify-list">
+                  {reviewProjects.map((p) => (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        className="notify-row"
+                        onClick={() => onOpenProject(p.id)}
+                      >
+                        <span className="notify-tag review">Review</span>
+                        <span className="notify-body">
+                          <span className="notify-title">{p.title}</span>
+                          <span className="notify-meta">
+                            {p.client || "No client"}
+                            {p.dueDate ? ` · ${dueLabel(p.dueDate)}` : ""}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+
+            {notifications.length > 0 && (
+              <>
+                {reviewProjects.length > 0 && (
+                  <div className="notify-group">Mentions &amp; replies</div>
+                )}
+                <ul className="notify-list">
+                  {sortNotifications(notifications).map((n) => {
+                    const project = workspace.projects.find(
+                      (p) => p.id === n.projectId,
+                    );
+                    return (
+                      <li key={n.id}>
+                        <button
+                          type="button"
+                          className="notify-row"
+                          onClick={() => onOpenNotification(n.projectId, n.id)}
+                        >
+                          <span className="notify-tag">
+                            {notificationTag(n.kind)}
+                          </span>
+                          <span className="notify-body">
+                            <span className="notify-title">
+                              <strong>{n.fromName}</strong>{" "}
+                              {describeNotification(n.kind)}
+                              {project ? ` · ${project.title}` : ""}
+                            </span>
+                            {n.snippet && (
+                              <span className="notify-snippet">
+                                {n.snippet}
+                              </span>
+                            )}
+                          </span>
+                          <span className="notify-when">
+                            {timeAgo(n.createdAt)}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
+          </>
+        )}
+      </section>
 
       {/* The personal checklist — Today / Upcoming / Completed. */}
       <DeskChecklist

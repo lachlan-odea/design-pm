@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import type { Notification, Project } from "../types";
+import { timeAgo } from "../dates";
+import { describeNotification, sortNotifications } from "../notifications";
 
 type Props = {
   notifications: Notification[];
@@ -8,20 +10,6 @@ type Props = {
   onOpenProject: (projectId: string, notificationId: string) => void;
   onClearAll: () => void;
 };
-
-function timeAgo(iso: string): string {
-  const then = new Date(iso).getTime();
-  if (isNaN(then)) return "";
-  const diff = Date.now() - then;
-  const min = Math.round(diff / 60000);
-  if (min < 1) return "just now";
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.round(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  const day = Math.round(hr / 24);
-  if (day < 7) return `${day}d ago`;
-  return new Date(iso).toLocaleDateString();
-}
 
 export function NotificationsPanel({
   notifications,
@@ -38,9 +26,7 @@ export function NotificationsPanel({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const sorted = [...notifications].sort((a, b) =>
-    b.createdAt.localeCompare(a.createdAt),
-  );
+  const sorted = sortNotifications(notifications);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -83,11 +69,7 @@ export function NotificationsPanel({
                       <div className="notif-head">
                         <span>
                           <strong>{n.fromName}</strong>{" "}
-                          {n.kind === "like"
-                            ? "liked your comment"
-                            : n.kind === "reply"
-                              ? "replied to your comment"
-                              : `mentioned you in a ${n.kind}`}
+                          {describeNotification(n.kind)}
                           {project ? (
                             <>
                               {" · "}

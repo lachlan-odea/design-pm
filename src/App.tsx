@@ -840,6 +840,13 @@ export default function App() {
             workspace={workspace}
             currentDesignerId={sessionDesignerId}
             onOpenProject={setOpenProjectId}
+            notifications={myNotifications}
+            reviewProjects={reviewProjects}
+            onOpenNotification={(projectId, notificationId) => {
+              deleteNotification(notificationId);
+              setOpenProjectId(projectId);
+            }}
+            onClearNotifications={clearAllNotifications}
           />
         ) : view === "executiveDashboard" ? (
           <Dashboard
