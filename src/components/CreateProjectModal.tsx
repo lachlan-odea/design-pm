@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Designer, Priority, Project, Workspace } from "../types";
 import { BRANDS } from "../constants";
 import { ContentTypeField } from "./ContentTypeField";
+import { projectContentTypes } from "../contentTypes";
 import { AssigneePicker } from "./AssigneePicker";
 
 type Props = {
@@ -41,7 +42,9 @@ export function CreateProjectModal({
   const [overview, setOverview] = useState(initial?.overview ?? "");
   const [client, setClient] = useState(initial?.client ?? "");
   const [brand, setBrand] = useState(initial?.brand ?? "");
-  const [contentType, setContentType] = useState(initial?.contentType ?? "");
+  const [contentTypes, setContentTypes] = useState<string[]>(() =>
+    projectContentTypes(initial ?? {}),
+  );
   const [briefUrl, setBriefUrl] = useState(initial?.briefUrl ?? "");
   const [dueDate, setDueDate] = useState(initial?.dueDate ?? "");
   const [priority, setPriority] = useState<Priority>(initial?.priority ?? "Normal");
@@ -84,7 +87,7 @@ export function CreateProjectModal({
       overview,
       client,
       brand,
-      contentType,
+      contentTypes,
       briefUrl,
       dueDate,
       priority,
@@ -150,7 +153,10 @@ export function CreateProjectModal({
             </label>
             <label className="field">
               <span>Content type</span>
-              <ContentTypeField value={contentType} onChange={setContentType} />
+              <ContentTypeField
+                value={contentTypes}
+                onChange={setContentTypes}
+              />
             </label>
             <label className="field">
               <span>Team</span>

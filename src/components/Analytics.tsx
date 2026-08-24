@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import type { Designer, Priority, Project, Workspace } from "../types";
 import { useChartTheme } from "../chartTheme";
+import { contentTypesLabel, projectContentTypes } from "../contentTypes";
 
 type Props = {
   // Every project across every workspace. Analytics filters this down based
@@ -94,7 +95,7 @@ function toCsv(projects: Project[], designers: Designer[]): string {
     p.priority,
     p.client,
     p.brand,
-    p.contentType,
+    contentTypesLabel(p, ""),
     designerNames(p.assigneeIds),
     p.dueDate,
     commencedDate(p),
@@ -229,10 +230,16 @@ export function Analytics({
     const byBrand = [...brands.entries()]
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count);
+    // A project with several content types counts once against each, so
+    // these bars intentionally sum to more than the project total — that's
+    // what a multi-value facet looks like.
     const contentTypes = new Map<string, number>();
     filtered.forEach((p) => {
-      const key = p.contentType || "—";
-      contentTypes.set(key, (contentTypes.get(key) ?? 0) + 1);
+      const types = projectContentTypes(p);
+      const keys = types.length > 0 ? types : ["—"];
+      keys.forEach((key) => {
+        contentTypes.set(key, (contentTypes.get(key) ?? 0) + 1);
+      });
     });
     const byContentType = [...contentTypes.entries()]
       .map(([label, count]) => ({ label, count }))
