@@ -12,6 +12,7 @@ import { ContentTypeField } from "./ContentTypeField";
 import { LinkifiedText } from "./LinkifiedText";
 import { findMentionedDesigners, findNewMentions } from "../mentions";
 import { copyText, projectShareUrl } from "../share";
+import { projectContentTypes } from "../contentTypes";
 import { Avatar } from "./Avatar";
 import { AssigneePicker } from "./AssigneePicker";
 
@@ -657,9 +658,9 @@ export function ProjectDetailModal({
             </Field>
             <Field label="Content type">
               <ContentTypeField
-                value={project.contentType}
+                value={projectContentTypes(project)}
                 onChange={(next) =>
-                  onChange((p) => ({ ...p, contentType: next }))
+                  onChange((p) => ({ ...p, contentTypes: next }))
                 }
               />
             </Field>

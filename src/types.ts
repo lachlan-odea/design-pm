@@ -85,7 +85,12 @@ export type Project = {
   overview: string;
   client: string;
   brand: string;
-  contentType: string;
+  // Legacy single-value content type, kept only so projects written before
+  // the field went multi-value still render. Never written to any more —
+  // always read through projectContentTypes() in contentTypes.ts, which
+  // prefers `contentTypes` and falls back to this.
+  contentType?: string;
+  contentTypes?: string[];
   briefUrl: string;
   dueDate: string;
   priority: Priority;

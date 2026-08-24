@@ -1210,6 +1210,42 @@ textarea {
   border-color: var(--primary);
   color: var(--primary);
 }
+/* Content types reuse the assignee chip, but without a leading avatar — the
+   base rule's 3px left padding is there to seat one, and looks lopsided on a
+   text-only chip. */
+.content-type-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.content-type-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.content-type-chips .assignee-chip {
+  padding: 4px 10px;
+}
+.content-type-chips .assignee-chip.add-other {
+  border-style: dashed;
+  color: var(--muted);
+}
+.content-type-chips .assignee-chip.add-other:hover {
+  border-style: solid;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.content-type-other input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
 .assignee-chip-avatar {
   width: 22px !important;
   height: 22px !important;

@@ -38,6 +38,7 @@ import { Login } from "./components/Login";
 import { ProfileSetup } from "./components/ProfileSetup";
 import { Avatar } from "./components/Avatar";
 import { readDraggedProjectId } from "./dnd";
+import { contentTypesSearchText } from "./contentTypes";
 import {
   DEFAULT_WORKSPACE_ID,
   SUPER_USER_EMAILS,
@@ -321,7 +322,7 @@ export default function App() {
     const q = filter.trim().toLowerCase();
     if (!q) return workspaceProjects;
     return workspaceProjects.filter((p) =>
-      [p.title, p.client, p.brand, p.contentType]
+      [p.title, p.client, p.brand, contentTypesSearchText(p)]
         .join(" ")
         .toLowerCase()
         .includes(q),
@@ -419,7 +420,7 @@ export default function App() {
       .filter(
         (p) =>
           !q ||
-          [p.title, p.client, p.brand, p.contentType]
+          [p.title, p.client, p.brand, contentTypesSearchText(p)]
             .join(" ")
             .toLowerCase()
             .includes(q),
@@ -439,7 +440,7 @@ export default function App() {
       .filter(
         (p) =>
           !q ||
-          [p.title, p.client, p.brand, p.contentType]
+          [p.title, p.client, p.brand, contentTypesSearchText(p)]
             .join(" ")
             .toLowerCase()
             .includes(q),
