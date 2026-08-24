@@ -116,8 +116,11 @@ export function subscribeWorkspace(
     (snap) => {
       hubs = snap.docs
         .map((d) => d.data() as Hub)
-        // Alphabetical so the sidebar clock strip has a stable order no
-        // matter what order the docs come back in.
+        // Alphabetical, so the admin list and the location pickers have a
+        // stable order no matter what order the docs come back in. The clock
+        // displays re-sort by UTC offset at render time (sortHubsByOffset),
+        // which can't be done here — offsets move with daylight saving, and
+        // this only runs when a doc changes.
         .sort((a, b) => a.name.localeCompare(b.name));
       hubsReady = true;
       emit();

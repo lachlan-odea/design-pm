@@ -9,6 +9,7 @@ import {
   isValidTimeZone,
   isWithinWorkHours,
   localTimeZone,
+  sortHubsByOffset,
   supportedTimeZones,
   timeZoneOffsetLabel,
 } from "../timezones";
@@ -183,7 +184,10 @@ export function SettingsModal({
               </p>
               {hubs.length > 0 && (
                 <div className="hub-summary">
-                  {hubs.map((h) => (
+                  {/* Same west-to-east order as the sidebar clocks. The
+                      editable table below stays alphabetical — that one is
+                      for finding a location, not reading the time. */}
+                  {sortHubsByOffset(hubs).map((h) => (
                     <span key={h.id} className="hub-summary-item">
                       <strong>{h.name}</strong> {hubClock(h)}
                     </span>

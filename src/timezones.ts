@@ -61,6 +61,51 @@ export function localTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 }
 
+// Minutes this zone is ahead of UTC right now — negative for the Americas.
+// Derived by reading the zone's wall clock and diffing it against UTC rather
+// than parsing an offset string, so half- and quarter-hour zones (India
+// +5:30, Nepal +5:45, Chatham +12:45) come out exactly, and daylight saving
+// is accounted for because it's computed at `now` rather than in the
+// abstract.
+export function zoneOffsetMinutes(
+  timeZone: string,
+  now: Date = new Date(),
+): number | null {
+  try {
+    const p = partsFor(timeZone, now);
+    const wallAsUtc = Date.UTC(
+      Number(p.year),
+      Number(p.month) - 1,
+      Number(p.day),
+      Number(p.hour) % 24,
+      Number(p.minute),
+    );
+    if (Number.isNaN(wallAsUtc)) return null;
+    // The parts carry no seconds, so compare against a whole minute or the
+    // current seconds leak into the result as error.
+    const nowToMinute = Math.floor(now.getTime() / 60000) * 60000;
+    return Math.round((wallAsUtc - nowToMinute) / 60000);
+  } catch {
+    return null;
+  }
+}
+
+// Order a set of locations west to east by their live UTC offset, so a column
+// of clocks reads chronologically — yesterday evening at the top, tomorrow
+// morning at the bottom — instead of jumping around by name. Ties break on
+// name so same-offset locations keep a stable order, and anything whose zone
+// we can't resolve sinks to the bottom rather than disturbing the sequence.
+export function sortHubsByOffset(hubs: Hub[], now: Date = new Date()): Hub[] {
+  return [...hubs].sort((a, b) => {
+    const oa = zoneOffsetMinutes(a.timeZone, now);
+    const ob = zoneOffsetMinutes(b.timeZone, now);
+    if (oa === null && ob === null) return a.name.localeCompare(b.name);
+    if (oa === null) return 1;
+    if (ob === null) return -1;
+    return oa - ob || a.name.localeCompare(b.name);
+  });
+}
+
 function partsFor(
   timeZone: string,
   now: Date,

@@ -5,6 +5,7 @@ import {
   hubClock,
   hubDayOffset,
   isWithinWorkHours,
+  sortHubsByOffset,
 } from "../timezones";
 
 type Props = {
@@ -53,9 +54,11 @@ export function HubClocks({ hubs, myHubId, collapsed }: Props) {
     );
   }
 
+  // Re-sorted on every tick rather than memoised: offsets shift at daylight
+  // saving boundaries, and it's a handful of items.
   return (
     <div className="hub-clocks">
-      {hubs.map((hub) => {
+      {sortHubsByOffset(hubs, now).map((hub) => {
         const isMine = hub.id === myHubId;
         const atWork = isWithinWorkHours(hub, now);
         const offset = myHub && !isMine ? hubDayOffset(hub, myHub, now) : null;
