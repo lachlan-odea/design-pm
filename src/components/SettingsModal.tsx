@@ -184,7 +184,7 @@ export function SettingsModal({
               </p>
               {hubs.length > 0 && (
                 <div className="hub-summary">
-                  {/* Same west-to-east order as the sidebar clocks. The
+                  {/* Same east-to-west order as the sidebar clocks. The
                       editable table below stays alphabetical — that one is
                       for finding a location, not reading the time. */}
                   {sortHubsByOffset(hubs).map((h) => (
