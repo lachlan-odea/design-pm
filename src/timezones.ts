@@ -90,19 +90,21 @@ export function zoneOffsetMinutes(
   }
 }
 
-// Order a set of locations west to east by their live UTC offset, so a column
-// of clocks reads chronologically — yesterday evening at the top, tomorrow
-// morning at the bottom — instead of jumping around by name. Ties break on
-// name so same-offset locations keep a stable order, and anything whose zone
-// we can't resolve sinks to the bottom rather than disturbing the sequence.
+// Order a set of locations east to west by their live UTC offset — furthest
+// ahead first — so reading down the column follows the day as it actually
+// travels: it begins in Sydney, reaches India, then Europe, then the Americas
+// last. Ties break on name so same-offset locations keep a stable order, and
+// anything whose zone we can't resolve sinks to the bottom rather than
+// disturbing the sequence.
 export function sortHubsByOffset(hubs: Hub[], now: Date = new Date()): Hub[] {
   return [...hubs].sort((a, b) => {
     const oa = zoneOffsetMinutes(a.timeZone, now);
     const ob = zoneOffsetMinutes(b.timeZone, now);
     if (oa === null && ob === null) return a.name.localeCompare(b.name);
+    // Unresolvable zones sink regardless of direction.
     if (oa === null) return 1;
     if (ob === null) return -1;
-    return oa - ob || a.name.localeCompare(b.name);
+    return ob - oa || a.name.localeCompare(b.name);
   });
 }
 
